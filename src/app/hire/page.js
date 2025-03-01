@@ -29,7 +29,8 @@ export default function AssessmentPage() {
     {
       id: "coding",
       title: "Coding Round",
-      description: "Solve real-world coding problems.",
+      description:
+        "Solve real-world coding challenges with practical solutions.",
       icon: <Code className="w-10 h-10 text-[#3684DB]" />,
       unlocked: completed.aptitude,
       completed: completed.coding,
