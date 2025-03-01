@@ -160,9 +160,9 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-[#F5F9FF] p-8 rounded-xl border border-[#D1DDED]">
               <p className="text-[#758BA5] italic mb-6">
-                "HireTrack's assessment platform helped me identify my strengths
-                and weaknesses before actual interviews. I landed a job at a top
-                tech company within 2 weeks!"
+                &quot;HireTrack&apos;s assessment platform helped me identify my
+                strengths and weaknesses before actual interviews. I landed a
+                job at a top tech company within 2 weeks!&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-[#3684DB] rounded-full flex items-center justify-center text-white font-bold">
@@ -178,9 +178,9 @@ export default function Home() {
             </div>
             <div className="bg-[#F5F9FF] p-8 rounded-xl border border-[#D1DDED]">
               <p className="text-[#758BA5] italic mb-6">
-                "As a hiring manager, HireTrack has transformed our recruitment
-                process. The AI-powered interviews save us countless hours while
-                providing reliable candidate insights."
+                &quot;As a hiring manager, HireTrack has transformed our
+                recruitment process. The AI-powered interviews save us countless
+                hours while providing reliable candidate insights.&quot;
               </p>
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-[#3684DB] rounded-full flex items-center justify-center text-white font-bold">
@@ -205,7 +205,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold">Ready to Showcase Your Skills?</h2>
           <p className="mt-6 text-xl max-w-3xl mx-auto">
-            Take the first step toward your dream career with HireTrack's
+            Take the first step toward your dream career with HireTrack&apos;s
             AI-powered assessments.
           </p>
           <div className="flex flex-col sm:flex-row justify-center mt-10 gap-4">

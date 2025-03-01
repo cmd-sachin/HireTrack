@@ -80,7 +80,7 @@ export default function RegistrationForm() {
 
   // Current year for graduation year dropdown
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
+  const years = Array.from({ length: 10 }, (_, i) => currentYear - 3 + i);
 
   const commonSkills = [
     "JavaScript",
@@ -91,18 +91,7 @@ export default function RegistrationForm() {
     "C++",
     "Data Analysis",
     "UI/UX",
-    "Project Management",
     "Cloud Computing",
-  ];
-
-  const jobTypes = [
-    "Software Development",
-    "Data Science",
-    "Product Management",
-    "UI/UX Design",
-    "DevOps",
-    "Project Management",
-    "Other",
   ];
 
   return (
@@ -148,7 +137,7 @@ export default function RegistrationForm() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Smith"
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
               </div>
@@ -171,7 +160,7 @@ export default function RegistrationForm() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="john@example.com"
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
               </div>
@@ -202,7 +191,7 @@ export default function RegistrationForm() {
                     value={formData.linkedin}
                     onChange={handleChange}
                     placeholder="https://linkedin.com/in/johnsmith"
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
               </div>
@@ -224,7 +213,7 @@ export default function RegistrationForm() {
                     value={formData.github}
                     onChange={handleChange}
                     placeholder="https://github.com/johnsmith"
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
               </div>
@@ -285,7 +274,7 @@ export default function RegistrationForm() {
                     value={formData.college}
                     onChange={handleChange}
                     placeholder="Stanford University"
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
               </div>
@@ -306,7 +295,7 @@ export default function RegistrationForm() {
                     required
                     value={formData.graduationYear}
                     onChange={handleChange}
-                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all appearance-none bg-white"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all appearance-none bg-white text-[#718096] placeholder:text-[#A8B2CF]"
                   >
                     <option value="">Select Year</option>
                     {years.map((year) => (
@@ -349,31 +338,6 @@ export default function RegistrationForm() {
                   ))}
                 </div>
               </div>
-
-              {/* Job Preference */}
-              <div className="md:col-span-2 space-y-2">
-                <label
-                  htmlFor="jobPreference"
-                  className="block text-sm font-medium text-[#758BA5]"
-                >
-                  What type of role are you seeking? *
-                </label>
-                <select
-                  id="jobPreference"
-                  name="jobPreference"
-                  required
-                  value={formData.jobPreference}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all"
-                >
-                  <option value="">Select Job Type</option>
-                  {jobTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             {/* Submit Button */}
@@ -415,7 +379,7 @@ export default function RegistrationForm() {
                 )}
               </button>
               <p className="mt-4 text-sm text-[#758BA5] text-center">
-                By clicking "Launch Your Assessment", you agree to our{" "}
+                By clicking &quot;Launch Your Assessment&quot;, you agree to our{" "}
                 <Link href="/terms" className="text-[#3684DB] hover:underline">
                   Terms of Service
                 </Link>{" "}
