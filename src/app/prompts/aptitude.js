@@ -60,3 +60,5 @@ The generated question should be output in the following format:
 
 
 `;
+
+export default aptitudeSystemPrompt;
