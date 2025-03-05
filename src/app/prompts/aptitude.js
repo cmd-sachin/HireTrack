@@ -1,9 +1,9 @@
 const difficulty = "Intermediate";
-const topics = ["Number System", "Average", "Logical Reasoning"];
+const topics = ["Alligation and Mixture", "Percentage", "Profit and Loss"];
 const weightage = {
-  "Number System": 5,
-  Average: 5,
-  "Logical Reasoning": 5,
+  "Alligation and Mixture": 5,
+  Percentage: 5,
+  "Profit and Loss": 5,
 };
 const specialInstructions =
   "Generate both aptitude and logical reasoning questions.";
@@ -50,7 +50,7 @@ Options: ["True", "False"]
 The generated question should be output in the following format:
 {
   question: "Your question text here",
-  options: [List of options – either two options for True/False questions or four options for MCQs]
+  options: [List of options - either two options for True/False questions or four options for MCQs]
 }
 
 ## Remember Notes

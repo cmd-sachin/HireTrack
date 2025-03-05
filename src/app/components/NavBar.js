@@ -16,7 +16,6 @@ const Navbar = () => {
 
         {/* Links Section */}
         <div className="flex items-center space-x-8">
-          <NavLink href="/" icon={Code} label="Assessments" />
           <NavLink href="/about" icon={Info} label="About" />
           <NavLink href="/contact" icon={Users} label="Contact" />
         </div>

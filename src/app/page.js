@@ -68,12 +68,6 @@ export default function Home() {
                 Wanna Get Hired?
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
-              <Link
-                href="/employers"
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-white text-[#031930] rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
-              >
-                For Employers
-              </Link>
             </div>
           </div>
         </div>
