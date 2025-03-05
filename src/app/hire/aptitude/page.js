@@ -8,21 +8,12 @@ import {
   CardFooter,
   Radio,
   RadioGroup,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
   Spinner,
 } from "@nextui-org/react";
-import {
-  Clock,
-  AlertCircle,
-  ArrowRight,
-  ListChecks,
-  Brain,
-} from "lucide-react";
+import { Clock, AlertCircle, ArrowRight, Loader2, Brain } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAptitudeStore } from "../../store/aptitudeStore";
+import useAssessmentStore from "../../store/assessmentStore"; // import assessment store
 
 const TOTAL_QUESTIONS = 10;
 const DEFAULT_TIMER_SECONDS = 60;
@@ -30,6 +21,7 @@ const DEFAULT_TIMER_SECONDS = 60;
 export default function QuizPage() {
   const router = useRouter();
   const { quizData, addOrUpdateQuizData } = useAptitudeStore();
+  const { completeAssessment } = useAssessmentStore(); // get store function
 
   // Dynamic questions state
   const [questions, setQuestions] = useState([]);
@@ -49,7 +41,7 @@ export default function QuizPage() {
   const [isTimerWarning, setIsTimerWarning] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [loadingNextQuestion, setLoadingNextQuestion] = useState(false);
-  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [finishLoading, setFinishLoading] = useState(false);
 
   const progressPercentage =
     ((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100;
@@ -62,7 +54,6 @@ export default function QuizPage() {
     if (questions.length === 0) {
       fetchNextDynamicQuestion();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Timer logic
@@ -87,7 +78,7 @@ export default function QuizPage() {
   }, [timer]);
 
   useEffect(() => {
-    // Reset when moving to a new question
+    // Reset timer and clear previous answer/validation on question change
     setTimer(DEFAULT_TIMER_SECONDS);
     setIsTimerActive(true);
     setIsTimerWarning(false);
@@ -95,11 +86,9 @@ export default function QuizPage() {
     setValidationError("");
   }, [currentQuestionIndex]);
 
-  // Function to fetch a dynamic question from your API
   const fetchNextDynamicQuestion = async () => {
     try {
       setLoadingNextQuestion(true);
-      console.log("Fetching next dynamic question...");
 
       const response = await fetch("/api/questionGeneration", {
         method: "POST",
@@ -108,7 +97,6 @@ export default function QuizPage() {
       });
 
       const data = await response.json();
-      console.log("API response data:", data);
 
       if (!data || typeof data.question !== "string") {
         throw new Error(
@@ -116,7 +104,6 @@ export default function QuizPage() {
         );
       }
 
-      // Update conversation history
       setMessages((prev) => [
         ...prev,
         {
@@ -128,16 +115,14 @@ export default function QuizPage() {
         },
       ]);
 
-      // Construct new question object
       const newQuestion = {
         section: "Aptitude",
         question: data.question,
-        inputType: "radio", // Only radio input is accepted
+        inputType: "radio",
         options: data.options || [],
         required: true,
       };
 
-      // Update the questions state
       setQuestions((prev) => [...prev, newQuestion]);
       setLoadingNextQuestion(false);
       console.log("Dynamic question loaded:", newQuestion);
@@ -183,13 +168,22 @@ export default function QuizPage() {
       await fetchNextDynamicQuestion();
       setCurrentQuestionIndex(nextIndex);
     } else {
-      setShowReviewModal(true);
+      // If autoSubmit is true (i.e. timer expired on the last question),
+      // finish the quiz automatically.
+      if (autoSubmit) {
+        handleFinishQuiz();
+      }
+      // Otherwise, the user can click "Finish" manually.
     }
   };
 
   const handleFinishQuiz = () => {
-    setShowReviewModal(false);
-    router.push("../analysis");
+    setFinishLoading(true);
+    // Mark the current round as completed in the store.
+    // In this example, we assume this quiz is for the "aptitude" round.
+    completeAssessment("aptitude");
+    // Redirect to the /hire page after updating the status.
+    router.push("/hire");
   };
 
   const formatTime = (seconds) => {
@@ -227,15 +221,21 @@ export default function QuizPage() {
     );
   };
 
-  if (loading || loadingNextQuestion || !currentQuestion) {
+  if (loading || !currentQuestion) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-6">
-        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
-          <Spinner color="primary" size="lg" />
-          <p className="mt-4 text-lg font-medium text-gray-700 animate-pulse">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F5F9FF] to-[#E3F2FD] p-6">
+        <div className="bg-white rounded-xl shadow-xl p-10 flex flex-col items-center justify-center">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-[#3684DB] border-opacity-20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-[#3684DB] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="mt-6 text-xl font-semibold text-[#223A59] animate-pulse">
             {loadingNextQuestion
-              ? "Loading your next question..."
-              : "Preparing the quiz..."}
+              ? "Generating your next question..."
+              : "Preparing personalized quiz..."}
+          </p>
+          <p className="text-sm text-[#667D99] mt-2 text-center">
+            Just a moment while we craft your assessment
           </p>
         </div>
       </div>
@@ -354,18 +354,22 @@ export default function QuizPage() {
           <CardFooter className="flex justify-end bg-[#F8FAFD] border-t border-[#D1DDED] px-6 py-4">
             <Button
               className="bg-[#3684DB] text-white hover:bg-[#2D6FC0] shadow-md transition-all duration-300"
-              endContent={
-                isLastQuestion ? (
-                  <ListChecks size={18} />
-                ) : (
-                  <ArrowRight size={18} />
-                )
+              onPress={() =>
+                isLastQuestion ? handleFinishQuiz() : handleNextQuestion()
               }
-              onPress={() => handleNextQuestion()}
-              isDisabled={isQuestionRequired && !selectedOption}
+              isDisabled={
+                (isQuestionRequired && !selectedOption) || loadingNextQuestion
+              }
               size="lg"
             >
-              {isLastQuestion ? "Review & Finish" : "Next Question"}
+              {loadingNextQuestion || finishLoading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                <span className="flex items-center">
+                  {isLastQuestion ? "Finish" : "Next Question"}
+                  {!isLastQuestion && <ArrowRight size={18} className="ml-2" />}
+                </span>
+              )}
             </Button>
           </CardFooter>
         </Card>
@@ -386,64 +390,6 @@ export default function QuizPage() {
           </div>
         </div>
       </div>
-
-      {/* Review Modal */}
-      <Modal
-        isOpen={showReviewModal}
-        onClose={() => setShowReviewModal(false)}
-        size="lg"
-        scrollBehavior="inside"
-        backdrop="blur"
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1 bg-gradient-to-r from-[#031930] to-[#223A59] text-white">
-            <h3 className="text-xl font-semibold text-center">
-              Review Your Answers
-            </h3>
-            <p className="text-sm text-[#B3D6F9] text-center">
-              Please review your responses before submitting the assessment.
-            </p>
-          </ModalHeader>
-          <ModalBody className="px-6 py-4">
-            {questions.map((q, index) => {
-              const answerObj = (Array.isArray(quizData) ? quizData : []).find(
-                (item) => item.questionNumber === index + 1
-              );
-              return (
-                <div
-                  key={index}
-                  className="mb-5 p-4 rounded-lg border border-[#D1DDED] bg-[#F8FAFD]"
-                >
-                  <h4 className="text-base font-semibold text-[#223A59]">
-                    Q{index + 1}: {q.question}
-                  </h4>
-                  <p className="mt-2 text-[#758BA5]">
-                    {answerObj ? (
-                      <span>
-                        Your answer:{" "}
-                        <span className="text-[#3684DB] font-medium">
-                          {answerObj.response}
-                        </span>
-                      </span>
-                    ) : (
-                      "No answer provided"
-                    )}
-                  </p>
-                </div>
-              );
-            })}
-            <div className="flex justify-center mt-6 mb-2">
-              <Button
-                className="bg-[#3684DB] text-white hover:bg-[#2D6FC0] transition-all duration-300 px-8 py-2"
-                size="lg"
-                onPress={handleFinishQuiz}
-              >
-                Submit Assessment
-              </Button>
-            </div>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
     </div>
   );
 }

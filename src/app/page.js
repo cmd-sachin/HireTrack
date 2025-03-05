@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,11 +9,14 @@ import {
   Users,
   ArrowRight,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import hireTrackBg from "./hiretrack-bg.jpg";
 import Navbar from "./components/NavBar";
 
 export default function Home() {
+  const [loading, setLoading] = useState(null);
+
   const features = [
     {
       icon: <Brain className="w-8 h-8 text-[#3684DB]" />,
@@ -63,10 +67,17 @@ export default function Home() {
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/form"
+                onClick={() => setLoading("/form")}
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold bg-[#3684DB] text-white rounded-lg hover:bg-[#2D6FC0] transition-all duration-300 shadow-lg"
               >
-                Wanna Get Hired?
-                <ArrowRight className="ml-2 w-5 h-5" />
+                {loading === "/form" ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  <>
+                    Wanna Get Hired?
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </>
+                )}
               </Link>
             </div>
           </div>
@@ -205,16 +216,28 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center mt-10 gap-4">
             <Link
               href="/form"
+              onClick={() => setLoading("/form")}
               className="inline-flex items-center justify-center px-10 py-4 text-lg font-semibold bg-white text-[#3684DB] rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
             >
-              Start Now
-              <ArrowRight className="ml-2 w-5 h-5" />
+              {loading === "/form" ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                <>
+                  Start Now
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </>
+              )}
             </Link>
             <Link
               href="/about"
+              onClick={() => setLoading("/about")}
               className="inline-flex items-center justify-center px-10 py-4 text-lg font-semibold bg-[#031930] text-white rounded-lg hover:bg-[#0A2340] transition-all duration-300 shadow-lg"
             >
-              Learn More
+              {loading === "/about" ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                "Learn More"
+              )}
             </Link>
           </div>
         </div>

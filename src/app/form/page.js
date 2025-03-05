@@ -11,6 +11,7 @@ import {
   Mail,
   User,
   CheckCircle,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import Navbar from "./../components/NavBar";
@@ -30,6 +31,7 @@ export default function RegistrationForm() {
 
   const [resumeFileName, setResumeFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [launchLoading, setLaunchLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -68,31 +70,12 @@ export default function RegistrationForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitting(true);
-
     // Simulate API call
     setTimeout(() => {
       console.log(formData);
       setSubmitting(false);
-      // Redirect to assessment page (in a real app)
-      // router.push('/assessment/aptitude');
     }, 1500);
   };
-
-  // Current year for graduation year dropdown
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 10 }, (_, i) => currentYear - 3 + i);
-
-  const commonSkills = [
-    "JavaScript",
-    "Python",
-    "React",
-    "Node.js",
-    "Java",
-    "C++",
-    "Data Analysis",
-    "UI/UX",
-    "Cloud Computing",
-  ];
 
   return (
     <div className="min-h-screen bg-[#F5F9FF]">
@@ -253,12 +236,17 @@ export default function RegistrationForm() {
             <div className="mt-8 flex flex-col items-center">
               <Link
                 href="/hire"
+                onClick={() => setLaunchLoading(true)}
                 className="w-full md:w-2/3 bg-gradient-to-r from-[#223A59] to-[#3684DB] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center justify-center hover:shadow-lg transition-all duration-300"
               >
-                <span className="flex items-center">
-                  Launch Your Assessment
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </span>
+                {launchLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  <span className="flex items-center">
+                    Launch Your Assessment
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </span>
+                )}
               </Link>
               <p className="mt-4 text-sm text-[#758BA5] text-center">
                 By clicking &quot;Launch Your Assessment&quot;, you agree to our{" "}
