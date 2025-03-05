@@ -12,9 +12,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Navbar from "../components/NavBar";
+import { useRouter } from "next/navigation";
 
 export default function Assessment() {
-  // State to track which assessment modules are unlocked and completed
+  const router = useRouter();
   const [assessmentStatus, setAssessmentStatus] = useState({
     aptitude: { unlocked: true, completed: false, started: false },
     coding: { unlocked: false, completed: false, started: false },
@@ -26,6 +27,7 @@ export default function Assessment() {
     const newStatus = { ...assessmentStatus };
     newStatus[type].started = true;
     setAssessmentStatus(newStatus);
+    router.push("/hire/aptitude");
   };
 
   // Function to handle completing an assessment
