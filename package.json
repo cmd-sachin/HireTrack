@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^1.1.17",
+    "@codemirror/lang-javascript": "^6.2.3",
     "@nextui-org/react": "^2.6.11",
+    "@uiw/codemirror-theme-dracula": "^4.23.10",
+    "@uiw/codemirror-theme-github": "^4.23.10",
+    "@uiw/react-codemirror": "^4.23.10",
     "ai": "^4.1.46",
     "airtable": "^0.12.2",
     "lucide-react": "^0.476.0",
