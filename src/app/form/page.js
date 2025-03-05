@@ -4,50 +4,45 @@ import {
   Briefcase,
   Upload,
   ArrowRight,
-  Calendar,
-  School,
   Linkedin,
   Github,
   Mail,
   User,
-  CheckCircle,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "./../components/NavBar";
 
 export default function RegistrationForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     linkedin: "",
     github: "",
     resume: null,
-    college: "",
-    graduationYear: "",
     skills: [],
-    jobPreference: "",
   });
-
+  const [errors, setErrors] = useState({});
   const [resumeFileName, setResumeFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [launchLoading, setLaunchLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({
-        ...formData,
+      setFormData((prev) => ({
+        ...prev,
         resume: file,
-      });
+      }));
       setResumeFileName(file.name);
     }
   };
@@ -55,25 +50,66 @@ export default function RegistrationForm() {
   const handleSkillChange = (e) => {
     const { value, checked } = e.target;
     if (checked) {
-      setFormData({
-        ...formData,
-        skills: [...formData.skills, value],
-      });
+      setFormData((prev) => ({
+        ...prev,
+        skills: [...prev.skills, value],
+      }));
     } else {
-      setFormData({
-        ...formData,
-        skills: formData.skills.filter((skill) => skill !== value),
-      });
+      setFormData((prev) => ({
+        ...prev,
+        skills: prev.skills.filter((skill) => skill !== value),
+      }));
     }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+
+    // Validate name
+    if (!formData.name.trim()) {
+      newErrors.name = "Full Name is required.";
+    }
+
+    // Validate email
+    if (!formData.email.trim()) {
+      newErrors.email = "Email Address is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email address.";
+    }
+
+    // Validate LinkedIn URL (must start with https://linkedin.com/)
+    if (!formData.linkedin.trim()) {
+      newErrors.linkedin = "LinkedIn URL is required.";
+    } else if (
+      !/^https:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedin)
+    ) {
+      newErrors.linkedin = "Invalid LinkedIn URL.";
+    }
+
+    // Validate resume file
+    if (!formData.resume) {
+      newErrors.resume = "Resume/CV is required.";
+    } else if (formData.resume.size > 5242880) {
+      newErrors.resume = "File size exceeds 5MB.";
+    }
+
+    return newErrors;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const formErrors = validate();
+    if (Object.keys(formErrors).length > 0) {
+      setErrors(formErrors);
+      return;
+    }
+    setErrors({});
     setSubmitting(true);
     // Simulate API call
     setTimeout(() => {
       console.log(formData);
       setSubmitting(false);
+      router.push("/hire"); // Navigate after validation passes
     }, 1500);
   };
 
@@ -123,6 +159,9 @@ export default function RegistrationForm() {
                     className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                )}
               </div>
 
               {/* Email */}
@@ -146,6 +185,9 @@ export default function RegistrationForm() {
                     className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
 
               {/* Professional Information */}
@@ -177,6 +219,9 @@ export default function RegistrationForm() {
                     className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
                 </div>
+                {errors.linkedin && (
+                  <p className="text-red-500 text-sm mt-1">{errors.linkedin}</p>
+                )}
               </div>
 
               {/* GitHub */}
@@ -229,17 +274,20 @@ export default function RegistrationForm() {
                     Maximum file size: 5MB
                   </p>
                 </div>
+                {errors.resume && (
+                  <p className="text-red-500 text-sm mt-1">{errors.resume}</p>
+                )}
               </div>
             </div>
 
             {/* Submit Button */}
             <div className="mt-8 flex flex-col items-center">
-              <Link
-                href="/hire"
-                onClick={() => setLaunchLoading(true)}
-                className="w-full md:w-2/3 bg-gradient-to-r from-[#223A59] to-[#3684DB] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center justify-center hover:shadow-lg transition-all duration-300"
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full md:w-2/3 bg-gradient-to-r from-[#223A59] to-[#3684DB] text-white py-4 px-8 rounded-lg font-bold text-lg flex items-center justify-center hover:shadow-lg transition-all duration-300 disabled:opacity-50"
               >
-                {launchLoading ? (
+                {submitting ? (
                   <Loader2 className="animate-spin h-5 w-5" />
                 ) : (
                   <span className="flex items-center">
@@ -247,7 +295,7 @@ export default function RegistrationForm() {
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </span>
                 )}
-              </Link>
+              </button>
               <p className="mt-4 text-sm text-[#758BA5] text-center">
                 By clicking &quot;Launch Your Assessment&quot;, you agree to our{" "}
                 <Link href="/terms" className="text-[#3684DB] hover:underline">

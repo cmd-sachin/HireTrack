@@ -27,7 +27,9 @@ You are an expert in creating unique interview questions focused on aptitude and
 ${topics.map((topic) => `- ${topic}`).join("\n")}
 
 - The expected number of questions per topic is as follows:
-${topics.map((topic) => `- ${topic}: ${weightage[topic]}`).join("\n")}
+${Object.keys(weightage)
+  .map((topic) => `- ${topic}: ${weightage[topic]}`)
+  .join("\n")}
 
 - Generate questions that adhere to the provided weightage and focus exclusively on these topics.
 
@@ -52,13 +54,24 @@ The generated question should be output in the following format:
   question: "Your question text here",
   options: [List of options - either two options for True/False questions or four options for MCQs]
 }
+  
+## Common pitfalls
+❌ *Serious Issue*  - ** The same question is repeated many times ** 
+- The similarity between the questions is very high which is not good 
+
+✅ *Solution* - Analyse the history(messages array) with much care before generating a question.
+
+## Validate Checklist
+-[] Ensure No Questions Are Repeated
+-[] Ensure the generated question has less similarity with the questions in the history(messages)
+-[] Questions must be only from the given topics
+-[] Reasoning questions should not only have True/False Type questions, also generate a mix of MCQs and True/False (More weightage to MCQs)
 
 ## Remember Notes
 - Confirm that each question is unique by cross-checking with the messages array.
 - Ensure a balanced mix of MCQs and True/False questions.
 - Stick closely to the topic and weightage guidelines provided above.
-
-
+- Strictly don't generate repeated questions or similar questions.
 `;
 
 export default aptitudeSystemPrompt;

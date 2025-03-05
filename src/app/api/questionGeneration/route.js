@@ -21,17 +21,20 @@ export async function POST(req) {
     if (level === "technical") {
       systemPrompt = technicalSystemPrompt;
       schema = z.object({
+        questionHeader: z.string(),
         question: z.string(),
         sampleTestCase: z.object({
           input: z.any(),
-          expectedOutput: z.any(),
+          output: z.any(),
+          explanation: z.string(),
         }),
         testCases: z.array(
           z.object({
             input: z.any(),
-            expectedOutput: z.any(),
+            output: z.any(),
           })
         ),
+        inputConstraints: z.array(z.string()),
       });
     }
 
