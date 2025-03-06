@@ -89,7 +89,8 @@ export default function CodingRoundPage() {
   const router = useRouter();
   const { completeAssessment } = useAssessmentStore();
 
-  // States for problems, code, test results, etc.
+  // Set default language to Python
+  const [selectedLanguage, setSelectedLanguage] = useState("python");
   const [code, setCode] = useState("");
   const [problems, setProblems] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -98,7 +99,6 @@ export default function CodingRoundPage() {
     overallResult: null,
     executionError: null,
   });
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [isRunning, setIsRunning] = useState(false);
   const [executionOutput, setExecutionOutput] = useState("");
   const [executionTime, setExecutionTime] = useState(null);
@@ -110,14 +110,14 @@ export default function CodingRoundPage() {
   // CodeMirror language extension
   const languageExtension = useMemo(() => {
     switch (selectedLanguage) {
-      case "python":
-        return python();
+      case "javascript":
+        return javascript();
       case "java":
         return java();
       case "c":
         return cpp();
       default:
-        return javascript();
+        return python();
     }
   }, [selectedLanguage]);
 
@@ -471,7 +471,6 @@ export default function CodingRoundPage() {
           <section className="bg-white shadow-lg rounded-xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
-                {/* Language selector placed to the left */}
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -518,7 +517,6 @@ export default function CodingRoundPage() {
                 onChange={(value) => setCode(value)}
               />
             </div>
-            {/* Execution Output box always visible */}
             <div className="mt-4">
               <h4 className="text-lg font-semibold mb-2">Execution Output</h4>
               <pre className="bg-gray-100 p-4 rounded whitespace-pre-wrap min-h-[100px]">
@@ -529,14 +527,13 @@ export default function CodingRoundPage() {
         </div>
       </div>
 
-      {/* Finish Confirmation Modal */}
       {showFinishModal && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center backdrop-blur-md bg-transparent"
+          className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-transparent"
           onClick={() => setShowFinishModal(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mt-10"
+            className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl font-bold text-blue-600 mb-4 text-center">
