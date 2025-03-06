@@ -25,6 +25,7 @@ ${topics.map((topic) => "* " + topic + "\n").join("")}
 - Generate 5 additional test cases that cover maximum edge cases.
 - Clearly define the input constraints.
 - Assume the sample test cases are designed considering an efficient/optimized solution.
+- *Avoid to generate the questions given as examples*
 
 ## Core Instructions
 1. Analyze the question type: ${questionType}.
@@ -42,6 +43,7 @@ ${topics.map((topic) => "* " + topic + "\n").join("")}
 
 *${additionalNote}*
 ## Examples
+*Avoid to generate the questions given as examples*
 
 ### Example 1 (Advanced)
 *header:* Shortest Path in Unweighted Graph  
@@ -174,6 +176,7 @@ inputConstraints : [""]
 - The output should follow the given output outline structure
 - The questions must be only from the given selective topics
 - The difficulty level given should be maintained.
+- Avoid to generate the questions given as examples
 - *${additionalNote}*
 
 ## Additional Note
