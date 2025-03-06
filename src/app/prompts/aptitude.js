@@ -37,6 +37,8 @@ ${Object.keys(weightage)
 - Do not repeat any questions.
 - Follow the provided topics and ensure the weightage for each topic is strictly maintained.
 - All questions must match the ${difficulty} difficulty level.
+- After generating all the questions,shuffle the questions in the array randomly
+- Don't generate the given example questions 
 - ${specialInstructions}
 
 ## Examples

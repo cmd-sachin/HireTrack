@@ -14,12 +14,12 @@ import {
 import { useState } from "react";
 import Navbar from "../components/NavBar";
 import { useRouter } from "next/navigation";
-import useAssessmentStore from "../store/assessmentStore"; 
+import useAssessmentStore from "../store/assessmentStore";
 
 export default function Assessment() {
   const router = useRouter();
   const { assessmentStatus } = useAssessmentStore();
-  const [loading, setLoading] = useState(null); 
+  const [loading, setLoading] = useState(null);
 
   const startAssessment = (type) => {
     setLoading(type);

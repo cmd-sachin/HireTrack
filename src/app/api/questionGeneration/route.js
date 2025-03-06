@@ -35,6 +35,12 @@ export async function POST(req) {
             })
           ),
           inputConstraints: z.array(z.string()),
+          starterCode: z.object({
+            python: z.string(),
+            c: z.string(),
+            java: z.string(),
+            javascript: z.string(),
+          }),
         })
       );
     }

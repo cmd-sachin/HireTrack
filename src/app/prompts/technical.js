@@ -40,6 +40,7 @@ ${topics.map((topic) => "* " + topic + "\n").join("")}
    - Clearly stated input constraints
 6. Ensure the sample test case demonstrates an optimized solution.
 7. Make sure that no question is repeated
+8. Follow the StarterCode Guidelines
 
 *${additionalNote}*
 ## Examples
@@ -161,6 +162,7 @@ ${topics.map((topic) => "* " + topic + "\n").join("")}
 
 ## Output Requirements
 - *Avoid generating the same example questions provided*
+- Follow the StarterCode Guidelines
 
 ### Output Outline Structure
 {
@@ -169,7 +171,18 @@ question:""
 sampleTestCase:{input , output , explanation}
 testCases:[{input,output}]
 inputConstraints : [""]
+starterCode : "" (Function definition and function call)
 }
+
+### StarterCode guidelines
+1. Create a function name and definition
+2. Add the approriate parameters as per the question
+3. Ask the user to return the answer (comments)
+4. create a function call but **don't assign the input**
+5. print the function call as output
+
+- Don't set any code as comment unless its just a instruction like : write your function here or return the string here...
+
 
 ## Remember Notes
 - Follow the provided instructions
@@ -177,6 +190,7 @@ inputConstraints : [""]
 - The questions must be only from the given selective topics
 - The difficulty level given should be maintained.
 - Avoid to generate the questions given as examples
+- Follow the StarterCode Guidelines
 - *${additionalNote}*
 
 ## Additional Note
