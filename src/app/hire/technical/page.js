@@ -212,7 +212,7 @@ function twoSum(nums, target) {
       default:
         return "bg-gray-400";
     }
-  }, [PROBLEM.difficulty]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F5F9FF] text-[#031930]">
