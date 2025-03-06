@@ -233,14 +233,6 @@ function twoSum(nums, target) {
         {/* Left Side - Problem Details & Test Cases */}
         <section className="w-full md:w-1/2">
           <div className="bg-white shadow rounded-xl p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold">{PROBLEM.title}</h2>
-              <span
-                className={`${difficultyColor} text-white py-1 px-3 rounded-full text-base`}
-              >
-                {PROBLEM.difficulty}
-              </span>
-            </div>
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2">Description</h3>
               <p className="text-base text-gray-700 whitespace-pre-line">
