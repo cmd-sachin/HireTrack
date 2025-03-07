@@ -49,8 +49,9 @@ export async function POST(req) {
       schema: schema,
       system: systemPrompt,
       messages: messages,
-      temperature: 0.8,
+      temperature: 1,
     });
+    console.log(result.object[0].testCases);
     return new Response(JSON.stringify(result.object));
   } catch (error) {
     console.error(error);

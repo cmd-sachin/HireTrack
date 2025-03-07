@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import useAssessmentStore from "../../store/assessmentStore";
+import useTechnicalStore from "../../store/technicalStore";
+import { shallow } from "zustand/shallow";
 
 // Dynamically import CodeMirror for client-side rendering
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
@@ -45,69 +47,76 @@ function findMatchingBracketIndex(str, startIndex) {
   return -1;
 }
 
-// Parse value helper
+// parseValue converts strings to numbers/booleans/objects as needed.
 const parseValue = (str) => {
-  try {
-    if (!str) return str;
-    str = str.trim();
-    if (!(str.startsWith("{") || str.startsWith("["))) {
-      return str;
-    }
-    if (str.startsWith("[")) {
-      const closingIndex = findMatchingBracketIndex(str, 0);
-      if (closingIndex === -1)
-        throw new Error("No matching closing bracket found.");
-      if (closingIndex < str.length - 1) {
-        const firstPart = str.substring(0, closingIndex + 1);
-        let remainder = str.substring(closingIndex + 1).trim();
-        if (remainder.startsWith(","))
-          remainder = remainder.substring(1).trim();
-        return [JSON.parse(firstPart), JSON.parse(remainder)];
+  if (!str) return str;
+  const trimmed = str.trim();
+  if (trimmed === "true") return true;
+  if (trimmed === "false") return false;
+  if (!isNaN(trimmed) && trimmed !== "") return Number(trimmed);
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      return JSON.parse(trimmed);
+    } catch (e) {
+      if (trimmed.startsWith("[")) {
+        const closingIndex = findMatchingBracketIndex(trimmed, 0);
+        if (closingIndex === -1)
+          throw new Error("No matching closing bracket found.");
+        if (closingIndex < trimmed.length - 1) {
+          const firstPart = trimmed.substring(0, closingIndex + 1);
+          let remainder = trimmed.substring(closingIndex + 1).trim();
+          if (remainder.startsWith(","))
+            remainder = remainder.substring(1).trim();
+          return [JSON.parse(firstPart), JSON.parse(remainder)];
+        }
       }
-      return JSON.parse(str);
-    }
-    if (str.startsWith("{")) {
-      const closingIndex = findMatchingBracketIndex(str, 0);
-      if (closingIndex === -1)
-        throw new Error("No matching closing brace found.");
-      if (closingIndex < str.length - 1) {
-        const firstPart = str.substring(0, closingIndex + 1);
-        let remainder = str.substring(closingIndex + 1).trim();
-        if (remainder.startsWith(","))
-          remainder = remainder.substring(1).trim();
-        return [JSON.parse(firstPart), JSON.parse(remainder)];
+      if (trimmed.startsWith("{")) {
+        const closingIndex = findMatchingBracketIndex(trimmed, 0);
+        if (closingIndex === -1)
+          throw new Error("No matching closing brace found.");
+        if (closingIndex < trimmed.length - 1) {
+          const firstPart = trimmed.substring(0, closingIndex + 1);
+          let remainder = trimmed.substring(closingIndex + 1).trim();
+          if (remainder.startsWith(","))
+            remainder = remainder.substring(1).trim();
+          return [JSON.parse(firstPart), JSON.parse(remainder)];
+        }
       }
-      return JSON.parse(str);
     }
-  } catch (error) {
-    console.error("Error parsing value:", error, "Input:", str);
-    return str;
   }
+  return trimmed;
 };
 
 export default function CodingRoundPage() {
   const router = useRouter();
   const { completeAssessment } = useAssessmentStore();
+  const { setQuestion, updateCode, updateTestResults } = useTechnicalStore();
 
-  // Set default language to Python
   const [selectedLanguage, setSelectedLanguage] = useState("python");
   const [code, setCode] = useState("");
   const [problems, setProblems] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [testResults, setTestResults] = useState({
-    testCaseResults: [],
-    overallResult: null,
-    executionError: null,
-  });
   const [isRunning, setIsRunning] = useState(false);
   const [executionOutput, setExecutionOutput] = useState("");
   const [executionTime, setExecutionTime] = useState(null);
   const [showFinishModal, setShowFinishModal] = useState(false);
 
-  // Flag for data fetching
   const isFetching = problems.length === 0;
+  const currentQuestionId =
+    problems[currentQuestionIndex]?.id || "dynamic-question";
 
-  // CodeMirror language extension
+  // Cache the default test results object.
+  const defaultTestResults = useMemo(
+    () => ({ testCaseResults: [], overallResult: null, executionError: null }),
+    []
+  );
+  const selectTestResults = useCallback(
+    (state) =>
+      state.questions[currentQuestionId]?.testResults || defaultTestResults,
+    [currentQuestionId, defaultTestResults]
+  );
+  const currentTestResults = useTechnicalStore(selectTestResults, shallow);
+
   const languageExtension = useMemo(() => {
     switch (selectedLanguage) {
       case "javascript":
@@ -121,7 +130,6 @@ export default function CodingRoundPage() {
     }
   }, [selectedLanguage]);
 
-  // Fetch dynamic questions from API
   const fetchDynamicQuestions = useCallback(async () => {
     try {
       const messages = [
@@ -135,14 +143,42 @@ export default function CodingRoundPage() {
       const data = await response.json();
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error(
-          "Invalid question data received from API: " + JSON.stringify(data)
+          "Invalid question data received: " + JSON.stringify(data)
         );
       }
       const mappedProblems = data.map((q) => {
-        const sampleInput = JSON.stringify(parseValue(q.sampleTestCase.input));
-        const sampleOutput = JSON.stringify(
-          parseValue(q.sampleTestCase.output)
-        );
+        const sampleInput = parseValue(q.sampleTestCase.input);
+        const sampleOutput = parseValue(q.sampleTestCase.output);
+        setQuestion(q.id || "dynamic-question", {
+          question: {
+            questionHeader: q.questionHeader,
+            description: q.question,
+            examples: [
+              {
+                input: sampleInput,
+                output: sampleOutput,
+                explanation: q.sampleTestCase.explanation,
+              },
+            ],
+            constraints: q.inputConstraints || [],
+            testCases: q.testCases
+              ? q.testCases.map((tc, idx) => ({
+                  id: idx,
+                  input: parseValue(tc.input),
+                  output: parseValue(tc.output),
+                  status: "pending",
+                  hidden: true,
+                }))
+              : [],
+            starterCode: q.starterCode,
+          },
+          code: q.starterCode ? q.starterCode[selectedLanguage] : "",
+          testResults: {
+            testCaseResults: [],
+            overallResult: null,
+            executionError: null,
+          },
+        });
         return {
           id: q.id || "dynamic-question",
           questionHeader: q.questionHeader,
@@ -158,8 +194,8 @@ export default function CodingRoundPage() {
           testCases: q.testCases
             ? q.testCases.map((tc, idx) => ({
                 id: idx,
-                input: JSON.stringify(parseValue(tc.input)),
-                output: JSON.stringify(parseValue(tc.output)),
+                input: parseValue(tc.input),
+                output: parseValue(tc.output),
                 status: "pending",
                 hidden: true,
               }))
@@ -170,40 +206,38 @@ export default function CodingRoundPage() {
       setProblems(mappedProblems);
       setCurrentQuestionIndex(0);
       if (mappedProblems.length > 0 && mappedProblems[0].starterCode) {
-        setCode(mappedProblems[0].starterCode[selectedLanguage]);
+        const initialCode = mappedProblems[0].starterCode[selectedLanguage];
+        setCode(initialCode);
+        updateCode(mappedProblems[0].id || "dynamic-question", initialCode);
       }
     } catch (err) {
       console.error("Error fetching dynamic questions:", err);
     }
-  }, [selectedLanguage]);
+  }, [selectedLanguage, setQuestion, updateCode]);
 
   useEffect(() => {
     fetchDynamicQuestions();
   }, [fetchDynamicQuestions]);
 
-  // Update code when language or question changes
   useEffect(() => {
     if (
       problems.length > 0 &&
       problems[currentQuestionIndex].starterCode &&
       problems[currentQuestionIndex].starterCode[selectedLanguage]
     ) {
-      setCode(problems[currentQuestionIndex].starterCode[selectedLanguage]);
+      const updatedCode =
+        problems[currentQuestionIndex].starterCode[selectedLanguage];
+      setCode(updatedCode);
+      updateCode(
+        problems[currentQuestionIndex].id || "dynamic-question",
+        updatedCode
+      );
     } else {
       setCode("");
+      updateCode(problems[currentQuestionIndex]?.id || "dynamic-question", "");
     }
-  }, [problems, currentQuestionIndex, selectedLanguage]);
+  }, [problems, currentQuestionIndex, selectedLanguage, updateCode]);
 
-  // Reset test results on language change
-  useEffect(() => {
-    setTestResults({
-      testCaseResults: [],
-      overallResult: null,
-      executionError: null,
-    });
-  }, [selectedLanguage]);
-
-  // Execute code via API
   const executeCode = async (userCode, language, input) => {
     setIsRunning(true);
     try {
@@ -232,14 +266,14 @@ export default function CodingRoundPage() {
     }
   };
 
-  // Run code handler: always uses sample input
   const handleRunCode = useCallback(async () => {
     if (code.trim() === "") {
       setExecutionOutput("Please write some code before running.");
       return;
     }
-    const sampleInput =
-      problems[currentQuestionIndex]?.examples?.[0]?.input || "";
+    const sampleInput = String(
+      problems[currentQuestionIndex]?.examples?.[0]?.input || ""
+    );
     try {
       const result = await executeCode(code, selectedLanguage, sampleInput);
       setExecutionOutput(result.success ? result.output : result.error);
@@ -248,14 +282,14 @@ export default function CodingRoundPage() {
     }
   }, [code, selectedLanguage, problems, currentQuestionIndex]);
 
-  // Handler for submitting code (runs all test cases)
   const handleSubmit = useCallback(async () => {
     const testCases = problems[currentQuestionIndex]?.testCases;
     if (!testCases || testCases.length === 0) {
-      setTestResults((prev) => ({
-        ...prev,
+      updateTestResults(currentQuestionId, {
+        testCaseResults: [],
+        overallResult: null,
         executionError: "No test cases available for this problem.",
-      }));
+      });
       return;
     }
     try {
@@ -263,7 +297,7 @@ export default function CodingRoundPage() {
         ...tc,
         status: "running",
       }));
-      setTestResults({
+      updateTestResults(currentQuestionId, {
         testCaseResults: updatedTestCases,
         overallResult: null,
         executionError: null,
@@ -275,62 +309,61 @@ export default function CodingRoundPage() {
           ...tc,
           status: idx === i ? "running" : tc.status,
         }));
-        setTestResults((prev) => ({
-          ...prev,
+        updateTestResults(currentQuestionId, {
           testCaseResults: updatedTestCases,
-        }));
+          overallResult: null,
+          executionError: null,
+        });
         const result = await executeCode(
           code,
           selectedLanguage,
-          testCase.input
+          String(testCase.input)
         );
         const passed =
-          result.success &&
-          result.output.trim() === testCase.output.replace(/"/g, "");
+          result.success && result.output.trim() === String(testCase.output);
         updatedTestCases = updatedTestCases.map((tc, idx) => ({
           ...tc,
           status: idx === i ? (passed ? "passed" : "failed") : tc.status,
           hidden: false,
         }));
         resultsArr.push({ ...testCase, passed });
-        setTestResults((prev) => ({
-          ...prev,
+        updateTestResults(currentQuestionId, {
           testCaseResults: updatedTestCases,
-        }));
+          overallResult: null,
+          executionError: null,
+        });
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
       const overallResult = resultsArr.every((test) => test.passed);
-      setTestResults((prev) => ({
-        ...prev,
+      updateTestResults(currentQuestionId, {
+        testCaseResults: updatedTestCases,
         overallResult,
-      }));
+        executionError: null,
+      });
     } catch (error) {
-      setTestResults((prev) => ({
-        ...prev,
+      updateTestResults(currentQuestionId, {
+        testCaseResults: [],
         overallResult: false,
         executionError: error.message,
-      }));
+      });
     }
-  }, [code, selectedLanguage, problems, currentQuestionIndex]);
+  }, [
+    code,
+    selectedLanguage,
+    problems,
+    currentQuestionIndex,
+    currentQuestionId,
+    updateTestResults,
+  ]);
 
-  // Finish button handler: show modal
-  const handleFinish = () => {
-    setShowFinishModal(true);
-  };
-
+  const handleFinish = () => setShowFinishModal(true);
   const confirmFinish = () => {
     completeAssessment("coding");
     router.push("/hire");
   };
 
-  // Navigation for problems
   const handlePreviousQuestion = useCallback(() => {
     setCurrentQuestionIndex((prev) => (prev > 0 ? prev - 1 : prev));
-    setTestResults({
-      testCaseResults: [],
-      overallResult: null,
-      executionError: null,
-    });
     setExecutionOutput("");
   }, []);
 
@@ -338,26 +371,17 @@ export default function CodingRoundPage() {
     setCurrentQuestionIndex((prev) =>
       prev < problems.length - 1 ? prev + 1 : prev
     );
-    setTestResults({
-      testCaseResults: [],
-      overallResult: null,
-      executionError: null,
-    });
     setExecutionOutput("");
   }, [problems.length]);
 
   return (
     <div className="min-h-screen bg-[#F5F9FF] text-[#031930] relative">
-      {/* Spinner overlay while fetching data */}
       {isFetching && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
           <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
         </div>
       )}
-
-      {/* Main Content Wrapper with blur when modal is open */}
       <div className={`${showFinishModal ? "filter blur-md" : ""}`}>
-        {/* Header Section */}
         <div className="bg-gradient-to-r from-[#031930] to-[#223A59] py-6 px-4 shadow-md">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-wide">
@@ -369,10 +393,7 @@ export default function CodingRoundPage() {
             </p>
           </div>
         </div>
-
-        {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Section – Problem Details */}
           <section className="bg-white shadow-lg rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-2xl font-bold">
@@ -407,10 +428,10 @@ export default function CodingRoundPage() {
                     className="border border-gray-200 rounded-lg p-4 mb-4"
                   >
                     <p className="text-base">
-                      <strong>Input:</strong> {example.input}
+                      <strong>Input:</strong> {JSON.stringify(example.input)}
                     </p>
                     <p className="text-base">
-                      <strong>Output:</strong> {example.output}
+                      <strong>Output:</strong> {JSON.stringify(example.output)}
                     </p>
                     <p className="text-base text-gray-600">
                       <strong>Explanation:</strong> {example.explanation}
@@ -441,21 +462,23 @@ export default function CodingRoundPage() {
                       className="flex justify-between items-center border-b border-gray-200 py-1"
                     >
                       <span className="text-base">Test Case {idx + 1}</span>
-                      {testResults.testCaseResults[idx] && (
+                      {currentTestResults.testCaseResults[idx] && (
                         <button
                           className={`px-3 py-1 text-xs rounded-full font-semibold ${
-                            testResults.testCaseResults[idx].status === "passed"
+                            currentTestResults.testCaseResults[idx].status ===
+                            "passed"
                               ? "bg-green-500 text-white"
-                              : testResults.testCaseResults[idx].status ===
-                                "failed"
+                              : currentTestResults.testCaseResults[idx]
+                                  .status === "failed"
                               ? "bg-red-500 text-white"
                               : "bg-gray-300 text-gray-700"
                           }`}
                           disabled
                         >
-                          {testResults.testCaseResults[idx].status === "passed"
+                          {currentTestResults.testCaseResults[idx].status ===
+                          "passed"
                             ? "Passed"
-                            : testResults.testCaseResults[idx].status ===
+                            : currentTestResults.testCaseResults[idx].status ===
                               "failed"
                             ? "Failed"
                             : ""}
@@ -466,8 +489,6 @@ export default function CodingRoundPage() {
                 </div>
               )}
           </section>
-
-          {/* Right Section – Code Editor and Controls */}
           <section className="bg-white shadow-lg rounded-xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
@@ -514,7 +535,10 @@ export default function CodingRoundPage() {
                 height="50vh"
                 extensions={[languageExtension]}
                 theme={githubLight}
-                onChange={(value) => setCode(value)}
+                onChange={(value) => {
+                  setCode(value);
+                  updateCode(currentQuestionId, value);
+                }}
               />
             </div>
             <div className="mt-4">
@@ -526,7 +550,6 @@ export default function CodingRoundPage() {
           </section>
         </div>
       </div>
-
       {showFinishModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-transparent"
