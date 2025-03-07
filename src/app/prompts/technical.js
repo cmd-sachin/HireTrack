@@ -1,11 +1,50 @@
-const questionType = "Data Structure & Algorithms";
-const difficulty = "Intermediate";
-const topics = ["Strings", "Arrays", "Dynamic Programming"];
-const numberOfQuestions = 4;
-const additionalNote = "Generate all questions with same difficulty level";
+import Airtable from "airtable";
 
-const technicalSystemPrompt = `
-# Technical Coding Round Question Generator (System Instructions)
+// Initialize Airtable connection
+const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+  process.env.AIRTABLE_BASE_ID
+);
+
+/**
+ * Fetch the technical configuration for a given college (defaulting to "BIT")
+ * and generate a dynamic system prompt for the technical coding round.
+ *
+ * @param {string} college - The college name (default: "BIT")
+ * @returns {Promise<string>} The dynamically generated technical system prompt.
+ */
+export async function getTechnicalSystemPrompt(college = "BIT") {
+  // Fetch the configuration record from Airtable for the given college
+  const records = await base("Criteria")
+    .select({
+      filterByFormula: `{College} = "${college}"`,
+      maxRecords: 1,
+    })
+    .all();
+
+  if (!records || records.length === 0) {
+    throw new Error(`No configuration found for college: ${college}`);
+  }
+
+  const record = records[0];
+
+  // Retrieve the configuration values with fallbacks
+  const questionType =
+    record.get("TechnicalQuestionType") || "Data Structure & Algorithms";
+  const difficulty = record.get("TechnicalDifficulty") || "Intermediate";
+
+  let topics = record.get("TechnicalQuestionTopics") || [];
+  // If topics is stored as a comma-separated string, convert it to an array
+  if (typeof topics === "string") {
+    topics = topics.split(",").map((topic) => topic.trim());
+  }
+
+  const numberOfQuestions = Number(record.get("TechnicalNoQuestions")) || 4;
+  const additionalNote =
+    record.get("TechnicalNotes") ||
+    "Generate all questions with same difficulty level";
+
+  // Build the dynamic system prompt string
+  const prompt = `# Technical Coding Round Question Generator (System Instructions)
 
 ## Persona
 - You're an "Expert in Generating Technical Coding Questions" for recruitment purposes.
@@ -38,16 +77,17 @@ ${topics.map((topic) => "* " + topic + "\n").join("")}
    - A sample test case (with input, output, and explanation)
    - 5 additional test cases covering edge cases
    - Clearly stated input constraints
+   - StarterCode : (for Javascript, Python, etc. as described)
 6. Ensure the sample test case demonstrates an optimized solution.
-7. Make sure that no question is repeated
-8. Shuffle the array or questions randomly after generating the questions.
+7. Make sure that no question is repeated.
+8. Shuffle the array of questions randomly after generating them.
 9. Follow the StarterCode Guidelines.
-10. Follow the test case guidelines carefully
-
+10. Follow the test case guidelines carefully.
 
 ${additionalNote}
+
 ## Examples
-Avoid to generate the questions given as examples
+Avoid generating the questions given as examples
 
 ### Example 1 (Advanced)
 header: Shortest Path in Unweighted Graph  
@@ -68,11 +108,11 @@ header: Longest Palindromic Substring
 question: Given a string 's', write a function to find and return the longest palindromic substring in 's'.  
 sampleTestCase: {Input: s = "babad", Output: "bab", Explanation: "bab" is a palindrome and is the longest found (note: "aba" is also acceptable).}  
 testCases:  
-- {input: "s = \"cbbd\"", output: "bb"}  
-- {input: "s = \"a\"", output: "a"}  
-- {input: "s = \"ac\"", output: "a"}  
-- {input: "s = \"forgeeksskeegfor\"", output: "geeksskeeg"}  
-- {input: "s = \"\"", output: ""}  
+- {input: "s = \\"cbbd\\"", output: "bb"}  
+- {input: "s = \\"a\\"", output: "a"}  
+- {input: "s = \\"ac\\"", output: "a"}  
+- {input: "s = \\"forgeeksskeegfor\\"", output: "geeksskeeg"}  
+- {input: "s = \\"\\"", output: ""}  
 constraints:  
 - "1 <= s.length <= 1000"  
 - "s consists of only printable ASCII characters."
@@ -146,7 +186,7 @@ testCases:
 - {input: "root = [2,1,3]", output: [2,1,3]}  
 constraints:  
 - "The number of nodes in the tree is in the range [0, 10^4]."  
-- "-10^9 <= Node.val <= 10^9"  
+- "-10^9 <= Node.val <= 10^9"
 
 ### Example 8 (Beginner)
 header: Product of Array Except Self  
@@ -169,12 +209,12 @@ constraints:
 
 ### Output Outline Structure
 {
-questionHeader:""
-question:""
-sampleTestCase:{input , output , explanation}
-testCases:[{input,output}]
-inputConstraints : [""]
-starterCode : "" (Function definition and function call)
+  questionHeader:""
+  question:""
+  sampleTestCase:{input , output , explanation}
+  testCases:[{input,output}]
+  inputConstraints : [""]
+  starterCode : "" (Function definition and function call)
 }
 
 #### Test cases guidelines
@@ -211,8 +251,7 @@ public class Main
 }
 
 
-- Don't set any code as comment unless its just a instruction like : write your function here or return the string here...
-
+- Don't set any code as comment unless its just an instruction like: write your function here or return the string here...
 
 ## Remember Notes
 - Follow the provided instructions
@@ -228,4 +267,7 @@ public class Main
 Note : ${additionalNote}
 `;
 
-export default technicalSystemPrompt;
+  return prompt;
+}
+
+export default getTechnicalSystemPrompt;

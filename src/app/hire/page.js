@@ -8,7 +8,6 @@ import {
   CheckCircle,
   ArrowRight,
   Clock,
-  AlertCircle,
   Loader2,
 } from "lucide-react";
 import { useState } from "react";
