@@ -179,7 +179,7 @@ starterCode : "" (Function definition and function call)
 
 #### Test cases guidelines
 - The input and expected output should follow the below structure
-❌ Input : "s=sbcd" or "nums =[1,2,3,4] "
+❌ Input : "s=sbcd" or "nums =[1,2,3,4]"
 ✅ Input : sbcd or [1,2,3,4] // Don't include quotes
 
 Output - should be a raw value
