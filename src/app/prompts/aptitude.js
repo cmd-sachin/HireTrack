@@ -1,14 +1,48 @@
-const difficulty = "Intermediate";
-const topics = ["Alligation and Mixture", "Percentage", "Profit and Loss"];
-const weightage = {
-  "Alligation and Mixture": 5,
-  Percentage: 5,
-  "Profit and Loss": 5,
-};
-const specialInstructions =
-  "Generate both aptitude and logical reasoning questions.";
+import Airtable from "airtable";
 
-const aptitudeSystemPrompt = `
+// Initialize Airtable connection
+const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
+  process.env.AIRTABLE_BASE_ID
+);
+
+export async function getAptitudeSystemPrompt(college = "BIT") {
+  const records = await base("Criteria")
+    .select({
+      filterByFormula: `{College} = "${college}"`,
+      maxRecords: 1,
+    })
+    .all();
+
+  if (!records || records.length === 0) {
+    throw new Error(`No configuration found for college: ${college}`);
+  }
+
+  const record = records[0];
+
+  const difficulty = record.get("AptitudeDifficulty") || "Intermediate";
+
+  let topics = record.get("AptitudeTopics") || [];
+  if (typeof topics === "string") {
+    topics = topics.split(",").map((topic) => topic.trim());
+  }
+
+  // Retrieve weightage. If stored as a JSON string, parse it.
+  let weightage = record.get("AptitudeTopicsWeightage") || {};
+  if (typeof weightage === "string") {
+    try {
+      weightage = JSON.parse(weightage);
+    } catch (error) {
+      console.error("Failed to parse weightage:", error);
+      weightage = {};
+    }
+  }
+
+  const specialInstructions =
+    record.get("AptitudeNotes") ||
+    "Generate both aptitude and logical reasoning questions.";
+
+  // Build the dynamic system prompt using the fetched values
+  const prompt = `
 # Interview Aptitude & Logical Reasoning Question Generator
 
 ## Persona
@@ -37,8 +71,8 @@ ${Object.keys(weightage)
 - Do not repeat any questions.
 - Follow the provided topics and ensure the weightage for each topic is strictly maintained.
 - All questions must match the ${difficulty} difficulty level.
-- After generating all the questions,shuffle the questions in the array randomly
-- Don't generate the given example questions 
+- After generating all the questions, shuffle the questions in the array randomly.
+- Don't generate the given example questions.
 - ${specialInstructions}
 
 ## Examples
@@ -76,4 +110,7 @@ The generated question should be output in the following format:
 - Strictly don't generate repeated questions or similar questions.
 `;
 
-export default aptitudeSystemPrompt;
+  return prompt;
+}
+
+export default getAptitudeSystemPrompt;

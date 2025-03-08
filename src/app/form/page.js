@@ -2,12 +2,12 @@
 import React, { useState } from "react";
 import {
   Briefcase,
-  Upload,
   ArrowRight,
   Linkedin,
   Github,
   Mail,
   User,
+  FileText,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
@@ -21,11 +21,10 @@ export default function RegistrationForm() {
     email: "",
     linkedin: "",
     github: "",
-    resume: null,
+    resume: "", // now a text input for Google Drive share link
     skills: [],
   });
   const [errors, setErrors] = useState({});
-  const [resumeFileName, setResumeFileName] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
@@ -34,32 +33,6 @@ export default function RegistrationForm() {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        resume: file,
-      }));
-      setResumeFileName(file.name);
-    }
-  };
-
-  const handleSkillChange = (e) => {
-    const { value, checked } = e.target;
-    if (checked) {
-      setFormData((prev) => ({
-        ...prev,
-        skills: [...prev.skills, value],
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        skills: prev.skills.filter((skill) => skill !== value),
-      }));
-    }
   };
 
   const validate = () => {
@@ -86,17 +59,17 @@ export default function RegistrationForm() {
       newErrors.linkedin = "Invalid LinkedIn URL.";
     }
 
-    // Validate resume file
-    if (!formData.resume) {
-      newErrors.resume = "Resume/CV is required.";
-    } else if (formData.resume.size > 5242880) {
-      newErrors.resume = "File size exceeds 5MB.";
+    // Validate resume link (must be a non-empty string and a Google Drive link)
+    if (!formData.resume.trim()) {
+      newErrors.resume = "Google Drive share link for Resume is required.";
+    } else if (!/^https:\/\/drive\.google\.com\/.*$/.test(formData.resume)) {
+      newErrors.resume = "Please provide a valid Google Drive share link.";
     }
 
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formErrors = validate();
     if (Object.keys(formErrors).length > 0) {
@@ -105,12 +78,38 @@ export default function RegistrationForm() {
     }
     setErrors({});
     setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log(formData);
+
+    try {
+      // Prepare payload to send to your API route.
+      // The resume field is sent as a URL string; your backend should wrap it
+      // in an object like: Resume: [{ url: resume }]
+      const payload = {
+        name: formData.name,
+        mail: formData.email,
+        linkedin: formData.linkedin,
+        github: formData.github,
+        resume: formData.resume,
+      };
+
+      const response = await fetch("/api/airtable/candidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to register candidate");
+      }
+
+      // Redirect to /hire once the candidate data is saved
+      router.push("/hire");
+    } catch (error) {
+      console.error("Error submitting candidate data:", error);
+      setErrors({ submit: error.message });
+    } finally {
       setSubmitting(false);
-      router.push("/hire"); // Navigate after validation passes
-    }, 1500);
+    }
   };
 
   return (
@@ -246,41 +245,41 @@ export default function RegistrationForm() {
                 </div>
               </div>
 
-              {/* Resume Upload */}
+              {/* Resume/CV Link */}
               <div className="md:col-span-2 space-y-2">
                 <label
                   htmlFor="resume"
                   className="block text-sm font-medium text-[#758BA5]"
                 >
-                  Resume/CV (PDF, DOCX) *
+                  Resume/CV Link *
                 </label>
-                <div className="relative border-2 border-dashed border-[#D1DDED] rounded-lg p-6 text-center hover:border-[#3684DB] transition-all">
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#758BA5] w-5 h-5" />
                   <input
-                    type="file"
+                    type="url"
                     id="resume"
                     name="resume"
                     required
-                    accept=".pdf,.docx"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    value={formData.resume}
+                    onChange={handleChange}
+                    placeholder="Paste your Google Drive share link here"
+                    className="pl-10 w-full p-3 border border-[#D1DDED] rounded-lg focus:ring-2 focus:ring-[#3684DB] focus:border-[#3684DB] outline-none transition-all text-[#4A5568] placeholder:text-[#A8B2CF]"
                   />
-                  <Upload className="mx-auto h-12 w-12 text-[#758BA5]" />
-                  <p className="mt-2 text-sm text-[#758BA5]">
-                    {resumeFileName
-                      ? `Selected: ${resumeFileName}`
-                      : "Drag and drop your resume, or click to browse"}
-                  </p>
-                  <p className="mt-1 text-xs text-[#758BA5]">
-                    Maximum file size: 5MB
-                  </p>
                 </div>
+                <p className="mt-1 text-xs text-[#758BA5]">
+                  Upload your resume to Google Drive, ensure it&apos;s publicly
+                  shared, and paste the share link here.
+                </p>
                 {errors.resume && (
                   <p className="text-red-500 text-sm mt-1">{errors.resume}</p>
                 )}
               </div>
             </div>
 
-            {/* Submit Button */}
+            {errors.submit && (
+              <p className="text-red-500 text-center mt-4">{errors.submit}</p>
+            )}
+
             <div className="mt-8 flex flex-col items-center">
               <button
                 type="submit"

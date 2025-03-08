@@ -15,7 +15,6 @@ import { useRouter } from "next/navigation";
 import { useAptitudeStore } from "../../store/aptitudeStore";
 import useAssessmentStore from "../../store/assessmentStore"; // import assessment store
 
-const TOTAL_QUESTIONS = 10;
 const DEFAULT_TIMER_SECONDS = 60;
 
 export default function QuizPage() {
@@ -27,6 +26,7 @@ export default function QuizPage() {
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [timer, setTimer] = useState(DEFAULT_TIMER_SECONDS);
+  const [totalQuestions, setTotalQuestions] = useState(null);
 
   // Conversation history
   const [messages, setMessages] = useState([
@@ -34,7 +34,7 @@ export default function QuizPage() {
   ]);
 
   // UI states
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOption, setSelectedOption] = useState("");
   const [isTimerActive, setIsTimerActive] = useState(true);
@@ -43,18 +43,39 @@ export default function QuizPage() {
   const [loadingNextQuestion, setLoadingNextQuestion] = useState(false);
   const [finishLoading, setFinishLoading] = useState(false);
 
-  const progressPercentage =
-    ((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100;
-  const currentQuestion = questions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === TOTAL_QUESTIONS - 1;
-  const isQuestionRequired = currentQuestion?.required !== false;
-
-  // Load the first dynamic question if none exist
+  // Fetch configuration from Airtable to get the total number of questions (using default college "BIT")
   useEffect(() => {
-    if (questions.length === 0) {
+    const fetchConfiguration = async () => {
+      try {
+        const res = await fetch("/api/airtable/criteria?college=BIT", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        if (data.success && data.configurations.length > 0) {
+          // Assuming the configuration contains aptitudeQuestions field
+          const config = data.configurations[0];
+          setTotalQuestions(Number(config.aptitudeQuestions) || 10);
+        } else {
+          throw new Error("Configuration not found");
+        }
+      } catch (err) {
+        console.error("Error fetching configuration:", err);
+        setError("Failed to load configuration. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConfiguration();
+  }, []);
+
+  // When configuration is loaded, if no dynamic questions have been loaded, load the first one.
+  useEffect(() => {
+    if (!loading && totalQuestions !== null && questions.length === 0) {
       fetchNextDynamicQuestion();
     }
-  }, []);
+  }, [loading, totalQuestions]);
 
   // Timer logic
   useEffect(() => {
@@ -104,6 +125,7 @@ export default function QuizPage() {
         );
       }
 
+      // Update conversation history with the new question
       setMessages((prev) => [
         ...prev,
         {
@@ -136,8 +158,8 @@ export default function QuizPage() {
   const getCurrentAnswer = () => selectedOption;
 
   const validateAnswer = () => {
-    if (!currentQuestion) return false;
-    if (!isQuestionRequired) return true;
+    if (!questions[currentQuestionIndex]) return false;
+    if (questions[currentQuestionIndex]?.required === false) return true;
 
     if (!selectedOption) {
       setValidationError("Please select an option to continue.");
@@ -155,8 +177,8 @@ export default function QuizPage() {
     // Save current question's answer
     addOrUpdateQuizData({
       questionNumber: currentQuestionIndex + 1,
-      question: currentQuestion.question,
-      options: currentQuestion.options || [],
+      question: questions[currentQuestionIndex].question,
+      options: questions[currentQuestionIndex].options || [],
       response: currentAnswer,
     });
 
@@ -164,7 +186,7 @@ export default function QuizPage() {
     setMessages((prev) => [...prev, { role: "user", content: currentAnswer }]);
 
     const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < TOTAL_QUESTIONS) {
+    if (nextIndex < totalQuestions) {
       await fetchNextDynamicQuestion();
       setCurrentQuestionIndex(nextIndex);
     } else {
@@ -179,10 +201,8 @@ export default function QuizPage() {
 
   const handleFinishQuiz = () => {
     setFinishLoading(true);
-    // Mark the current round as completed in the store.
-    // In this example, we assume this quiz is for the "aptitude" round.
     completeAssessment("aptitude");
-    // Redirect to the /hire page after updating the status.
+
     router.push("/hire");
   };
 
@@ -197,7 +217,7 @@ export default function QuizPage() {
 
   // Render only radio options
   const renderQuestionInput = () => {
-    if (!currentQuestion) return null;
+    if (!questions[currentQuestionIndex]) return null;
     return (
       <RadioGroup
         value={selectedOption}
@@ -208,7 +228,7 @@ export default function QuizPage() {
         className="gap-3 space-y-3"
         orientation="vertical"
       >
-        {currentQuestion.options.map((option, index) => (
+        {questions[currentQuestionIndex].options.map((option, index) => (
           <Radio
             key={index}
             value={option}
@@ -221,7 +241,7 @@ export default function QuizPage() {
     );
   };
 
-  if (loading || !currentQuestion) {
+  if (loading || totalQuestions === null || !questions[currentQuestionIndex]) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#F5F9FF] to-[#E3F2FD] p-6">
         <div className="bg-white rounded-xl shadow-xl p-10 flex flex-col items-center justify-center">
@@ -265,6 +285,11 @@ export default function QuizPage() {
     );
   }
 
+  const progressPercentage = (currentQuestionIndex / totalQuestions) * 100;
+  const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
+  const isQuestionRequired = currentQuestion?.required !== false;
+
   return (
     <div className="min-h-screen bg-[#F5F9FF]">
       {/* Header Section */}
@@ -290,7 +315,7 @@ export default function QuizPage() {
               <div>
                 <h2 className="font-bold text-[#223A59]">Aptitude Test</h2>
                 <p className="text-xs text-[#667D99]">
-                  Question {currentQuestionIndex + 1} of {TOTAL_QUESTIONS}
+                  Question {currentQuestionIndex + 1} of {totalQuestions}
                 </p>
               </div>
             </div>

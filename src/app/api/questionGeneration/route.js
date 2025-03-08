@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import aptitudeSystemPrompt from "../../prompts/aptitude";
-import technicalSystemPrompt from "../../prompts/technical";
+import getAptitudeSystemPrompt from "../../prompts/aptitude";
+import getTechnicalSystemPrompt from "../../prompts/technical";
 import z from "zod";
 
 const google = createGoogleGenerativeAI({ apiKey: process.env.apiKey });
@@ -10,14 +10,14 @@ export async function POST(req) {
   try {
     const { level, messages } = await req.json();
 
-    let systemPrompt = aptitudeSystemPrompt;
+    let systemPrompt = await getAptitudeSystemPrompt();
     let schema = z.object({
       question: z.string(),
       options: z.array(z.string()).optional(),
     });
 
     if (level === "technical") {
-      systemPrompt = technicalSystemPrompt;
+      systemPrompt = await getTechnicalSystemPrompt();
 
       schema = z.array(
         z.object({
@@ -49,7 +49,7 @@ export async function POST(req) {
       schema: schema,
       system: systemPrompt,
       messages: messages,
-      temperature: 0.8,
+      temperature: 1,
     });
     return new Response(JSON.stringify(result.object));
   } catch (error) {

@@ -8,7 +8,6 @@ import {
   CheckCircle,
   ArrowRight,
   Clock,
-  AlertCircle,
   Loader2,
 } from "lucide-react";
 import { useState } from "react";
@@ -23,7 +22,14 @@ export default function Assessment() {
 
   const startAssessment = (type) => {
     setLoading(type);
-    router.push(`/hire/${type}`);
+    // If the round is "interview", redirect to /hire/hrInterview
+    if (type === "interview") {
+      router.push("/hire/hrInterview");
+    } else if (type === "coding") {
+      router.push("/hire/technical");
+    } else {
+      router.push(`/hire/${type}`);
+    }
   };
 
   // Helper to compute progress bar width

@@ -19,6 +19,7 @@
     "@uiw/codemirror-theme-dracula": "^4.23.10",
     "@uiw/codemirror-theme-github": "^4.23.10",
     "@uiw/react-codemirror": "^4.23.10",
+    "@vapi-ai/web": "^2.2.2",
     "ai": "^4.1.46",
     "airtable": "^0.12.2",
     "axios": "^1.8.1",
