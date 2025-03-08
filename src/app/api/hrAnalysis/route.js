@@ -1,7 +1,10 @@
 export async function GET(req) {
-  const data = req.json();
-  console.log(req);
-  return new Response(JSON.stringify(data), {
+  const url = new URL(req.url);
+  const params = Object.fromEntries(url.searchParams.entries());
+
+  console.log("Query Params:", params);
+
+  return new Response(JSON.stringify(params), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

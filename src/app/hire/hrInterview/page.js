@@ -299,12 +299,11 @@ export default function HRAgentPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-[#031930]">
-            AI-Powered HR Interview
+            AI-Powered Hiring
           </h1>
           <p className="mt-3 text-[#758BA5] max-w-2xl mx-auto">
-            Practice your interview skills with Gwen, our AI-powered HR
-            recruiter. Get comfortable answering common interview questions
-            before your real interviews.
+            Meet Gwen our intelligent AI recruiter, streamlining hiring with
+            precision and speed.
           </p>
         </div>
 
@@ -323,10 +322,9 @@ export default function HRAgentPage() {
                 </div>
               </div>
               <p className="text-[#031930] mb-6">
-                Gwen will conduct an actual job interview, asking you about your
-                experience, skills, and career goals. She&apos;ll provide a
-                comprehensive assessment of your interview performance
-                afterward.
+                Gwen will conduct a real job interview, evaluating your
+                experience, skills, and career goals. She will then provide a
+                comprehensive assessment of your performance.
               </p>
               <h3 className="font-semibold text-[#223A59] mb-2">
                 Interview Instructions:
