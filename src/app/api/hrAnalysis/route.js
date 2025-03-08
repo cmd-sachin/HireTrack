@@ -5,10 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
-    console.log("Request body:", req);
-    const body = await req.json();
-
-    const { message } = body;
+    const { message } = await req.json();
 
     if (!message || message.type !== "assistant-request") {
       return NextResponse.json(
@@ -17,10 +14,7 @@ export async function POST(req) {
       );
     }
 
-    return NextResponse.json(
-      { message: "Request processed successfully" },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: "Request processed successfully" });
   } catch (error) {
     console.error("Error processing request:", error);
     return NextResponse.json({ error: error?.toString() }, { status: 500 });
