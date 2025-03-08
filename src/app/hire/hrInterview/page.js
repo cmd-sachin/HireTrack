@@ -200,11 +200,10 @@ export default function HRAgentPage() {
       setShowMsg(false);
     });
 
-    vapi.on("call-end", (report) => {
+    vapi.on("call-end", () => {
       setConnected(false);
       setConnecting(false);
       setShowMsg(false);
-      console.log(report);
     });
 
     vapi.on("speech-start", () => {
@@ -254,7 +253,7 @@ export default function HRAgentPage() {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       setMicError(false);
       setConnecting(true);
-      vapi.start(assistantOptions);
+      vapi.start(process.env.NEXT_PUBLIC_ASSISTANT_ID);
     } catch (error) {
       console.error("Microphone permission error:", error);
       setMicError(true);
@@ -476,111 +475,3 @@ export default function HRAgentPage() {
     </div>
   );
 }
-
-const assistantOptions = {
-  name: "Gwen",
-  firstMessage:
-    "Hello, I'm Gwen, a senior HR recruiter from HireTrack. Thanks for joining this interview session today. Could you start by telling me a bit about your professional background and the position you're interested in?",
-  transcriber: {
-    provider: "deepgram",
-    model: "nova-2",
-    language: "en-US",
-  },
-  voice: {
-    provider: "playht",
-    voiceId: "jennifer",
-  },
-  model: {
-    provider: "openai",
-    model: "gpt-4",
-    messages: [
-      {
-        role: "system",
-        content: `
-[Identity]
-You are Gwen, a senior HR recruiter at HireTrack with over 8 years of experience in talent acquisition. You're conducting a mock interview to help candidates prepare for real job interviews.
-
-[Style]
-Maintain a professional but friendly tone. Be encouraging yet thorough in your questioning.
-
-[Task & Goals]
-- Ask relevant interview questions that assess both technical and soft skills
-- Follow a natural conversational flow rather than rushing through questions
-- Provide a balance of easy and challenging questions
-- Focus on the candidate's background, experience, problem-solving abilities, and career goals
-- Include questions about handling difficult situations and teamwork
-- Ask for specific examples from past experience
-
-[Interview Structure]
-1. Introduction and ice-breaker question
-2. Professional background and experience
-3. Skills assessment (technical and soft skills)
-4. Career goals and aspirations
-5. Situational and behavioral questions
-6. Opportunity for candidate questions
-7. Interview wrap-up
-
-[Important Notes]
-- Ask one question at a time and wait for a response
-- Provide brief feedback or follow-up questions when appropriate
-- Make the interview feel authentic and conversational
-- End the conversation after approximately 12-15 minutes with a polite conclusion
-        `,
-      },
-    ],
-    tools: [
-      {
-        type: "endCall",
-      },
-    ],
-  },
-  analysisPlan: {
-    summaryPrompt:
-      "You are an expert HR interview analyst. Provide a detailed assessment of this interview between HR recruiter Gwen and the candidate. Focus on communication skills, content of answers, confidence level, and overall interview performance.",
-    summaryRequestTimeoutSeconds: 20,
-    structuredDataRequestTimeoutSeconds: 20,
-    successEvaluationPrompt:
-      "Evaluate the success of the interview on a numeric scale from 1-10, where 10 is exceptional interview performance.",
-    successEvaluationRubric: "NumericScale",
-    successEvaluationRequestTimeoutSeconds: 20,
-    structuredDataPrompt:
-      "Extract key data points from this interview to provide feedback to the candidate.",
-    structuredDataSchema: {
-      type: "object",
-      properties: {
-        communicationSkill: {
-          type: "string",
-          description:
-            "Assessment of communication skills (Excellent/Good/Average/Needs Improvement)",
-        },
-        confidenceLevel: {
-          type: "string",
-          description:
-            "Confidence level demonstrated (Very Confident/Confident/Somewhat Confident/Not Confident)",
-        },
-        strengthsIdentified: {
-          type: "array",
-          description: "Key strengths identified during the interview",
-          items: { type: "string" },
-        },
-        areasForImprovement: {
-          type: "array",
-          description: "Areas that could be improved for future interviews",
-          items: { type: "string" },
-        },
-        overallAssessment: {
-          type: "string",
-          description: "Comprehensive assessment with specific feedback",
-        },
-      },
-      required: [
-        "communicationSkill",
-        "confidenceLevel",
-        "strengthsIdentified",
-        "areasForImprovement",
-        "overallAssessment",
-      ],
-      description: "Structured interview feedback",
-    },
-  },
-};
