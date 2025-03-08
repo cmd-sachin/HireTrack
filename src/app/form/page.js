@@ -80,9 +80,6 @@ export default function RegistrationForm() {
     setSubmitting(true);
 
     try {
-      // Prepare payload to send to your API route.
-      // The resume field is sent as a URL string; your backend should wrap it
-      // in an object like: Resume: [{ url: resume }]
       const payload = {
         name: formData.name,
         mail: formData.email,
