@@ -1,11 +1,17 @@
-export async function GET(req) {
-  const url = new URL(req.url);
-  const params = Object.fromEntries(url.searchParams.entries());
+// app/api/server/route.js
+import { NextResponse } from "next/server";
 
-  console.log("Query Params:", params);
+export async function POST(request) {
+  const body = await request.json();
+  const { message } = body;
 
-  return new Response(JSON.stringify(params), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  // Validate the request body
+  if (!message || message.type !== "assistant-request") {
+    return NextResponse.json(
+      { error: "Invalid request payload" },
+      { status: 400 }
+    );
+  }
+  console.log(message);
+  return NextResponse.json({ message: message });
 }
