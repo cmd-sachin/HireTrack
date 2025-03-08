@@ -1,3 +1,4 @@
+// page.js
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
@@ -31,7 +32,7 @@ import { java } from "@codemirror/lang-java";
 import { cpp } from "@codemirror/lang-cpp";
 import { githubLight } from "@uiw/codemirror-theme-github";
 
-// Keeping all helper functions unchanged
+// Helper function to find matching bracket index.
 function findMatchingBracketIndex(str, startIndex) {
   const open = str[startIndex];
   let close;
@@ -108,18 +109,16 @@ export default function CodingRoundPage() {
   const [expandedSection, setExpandedSection] = useState("description");
 
   const isFetching = problems.length === 0;
-  const currentQuestionId =
-    problems[currentQuestionIndex]?.id || "dynamic-question";
+  // Use the question header as the key.
+  const currentQuestionHeader =
+    problems[currentQuestionIndex]?.questionHeader || "Dynamic Question";
 
-  // Cache the default test results object.
-  const defaultTestResults = useMemo(
-    () => ({ testCaseResults: [], overallResult: null, executionError: null }),
-    []
-  );
+  // Cache default testResults (only testCaseResults)
+  const defaultTestResults = useMemo(() => ({ testCaseResults: [] }), []);
   const selectTestResults = useCallback(
     (state) =>
-      state.questions[currentQuestionId]?.testResults || defaultTestResults,
-    [currentQuestionId, defaultTestResults]
+      state.questions[currentQuestionHeader]?.testResults || defaultTestResults,
+    [currentQuestionHeader, defaultTestResults]
   );
   const currentTestResults = useTechnicalStore(selectTestResults, shallow);
 
@@ -140,7 +139,7 @@ export default function CodingRoundPage() {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
-  // Keeping all API and functionality methods unchanged
+  // Fetch dynamic questions and update the store using questionHeader as key.
   const fetchDynamicQuestions = useCallback(async () => {
     try {
       const messages = [
@@ -160,51 +159,41 @@ export default function CodingRoundPage() {
       const mappedProblems = data.map((q) => {
         const sampleInput = parseValue(q.sampleTestCase.input);
         const sampleOutput = parseValue(q.sampleTestCase.output);
-        setQuestion(q.id || "dynamic-question", {
-          question: {
-            questionHeader: q.questionHeader,
-            description: q.question,
-            examples: [
-              {
-                input: sampleInput,
-                output: sampleOutput,
-                explanation: q.sampleTestCase.explanation,
-              },
-            ],
-            constraints: q.inputConstraints || [],
-            testCases: q.testCases
-              ? q.testCases.map((tc, idx) => ({
-                  id: idx,
-                  input: parseValue(tc.input),
-                  output: parseValue(tc.output),
-                  status: "pending",
-                  hidden: true,
-                }))
-              : [],
-            starterCode: q.starterCode,
+        // Update the store using the question header as the key.
+        setQuestion(q.questionHeader, {
+          description: q.question,
+          sampleTestcase: {
+            input: sampleInput,
+            output: sampleOutput,
+            explanation: q.sampleTestCase.explanation,
           },
-          code: q.starterCode ? q.starterCode[selectedLanguage] : "",
+          constraints: q.inputConstraints || [],
+          // Remove the "id" field from testcases.
+          testcases: q.testCases
+            ? q.testCases.map((tc) => ({
+                input: parseValue(tc.input),
+                output: parseValue(tc.output),
+                status: "pending",
+                hidden: true,
+              }))
+            : [],
+          userCode: q.starterCode ? q.starterCode[selectedLanguage] : "",
           testResults: {
             testCaseResults: [],
-            overallResult: null,
-            executionError: null,
           },
         });
         return {
-          id: q.id || "dynamic-question",
           questionHeader: q.questionHeader,
           description: q.question,
-          examples: [
-            {
-              input: sampleInput,
-              output: sampleOutput,
-              explanation: q.sampleTestCase.explanation,
-            },
-          ],
+          sampleTestcase: {
+            input: sampleInput,
+            output: sampleOutput,
+            explanation: q.sampleTestCase.explanation,
+          },
           constraints: q.inputConstraints || [],
-          testCases: q.testCases
-            ? q.testCases.map((tc, idx) => ({
-                id: idx,
+          // Remove the "id" field from testcases.
+          testcases: q.testCases
+            ? q.testCases.map((tc) => ({
                 input: parseValue(tc.input),
                 output: parseValue(tc.output),
                 status: "pending",
@@ -219,7 +208,7 @@ export default function CodingRoundPage() {
       if (mappedProblems.length > 0 && mappedProblems[0].starterCode) {
         const initialCode = mappedProblems[0].starterCode[selectedLanguage];
         setCode(initialCode);
-        updateCode(mappedProblems[0].id || "dynamic-question", initialCode);
+        updateCode(mappedProblems[0].questionHeader, initialCode);
       }
     } catch (err) {
       console.error("Error fetching dynamic questions:", err);
@@ -227,14 +216,15 @@ export default function CodingRoundPage() {
   }, [selectedLanguage, setQuestion, updateCode]);
 
   useEffect(() => {
-    // When question changes, ensure we have test results initialized
+    // When the question changes, initialize testResults if needed.
     if (
-      currentQuestionId &&
-      !useTechnicalStore.getState().questions[currentQuestionId]?.testResults
+      currentQuestionHeader &&
+      !useTechnicalStore.getState().questions[currentQuestionHeader]
+        ?.testResults
     ) {
-      updateTestResults(currentQuestionId, defaultTestResults);
+      updateTestResults(currentQuestionHeader, defaultTestResults);
     }
-  }, [currentQuestionId, updateTestResults, defaultTestResults]);
+  }, [currentQuestionHeader, updateTestResults, defaultTestResults]);
 
   useEffect(() => {
     fetchDynamicQuestions();
@@ -249,13 +239,13 @@ export default function CodingRoundPage() {
       const updatedCode =
         problems[currentQuestionIndex].starterCode[selectedLanguage];
       setCode(updatedCode);
-      updateCode(
-        problems[currentQuestionIndex].id || "dynamic-question",
-        updatedCode
-      );
+      updateCode(problems[currentQuestionIndex].questionHeader, updatedCode);
     } else {
       setCode("");
-      updateCode(problems[currentQuestionIndex]?.id || "dynamic-question", "");
+      updateCode(
+        problems[currentQuestionIndex]?.questionHeader || "Dynamic Question",
+        ""
+      );
     }
   }, [problems, currentQuestionIndex, selectedLanguage, updateCode]);
 
@@ -293,7 +283,7 @@ export default function CodingRoundPage() {
       return;
     }
     const sampleInput = String(
-      problems[currentQuestionIndex]?.examples?.[0]?.input || ""
+      problems[currentQuestionIndex]?.sampleTestcase?.input || ""
     );
     try {
       const result = await executeCode(code, selectedLanguage, sampleInput);
@@ -304,36 +294,29 @@ export default function CodingRoundPage() {
   }, [code, selectedLanguage, problems, currentQuestionIndex]);
 
   const handleSubmit = useCallback(async () => {
-    const testCases = problems[currentQuestionIndex]?.testCases;
-    if (!testCases || testCases.length === 0) {
-      updateTestResults(currentQuestionId, {
+    const testcases = problems[currentQuestionIndex]?.testcases;
+    if (!testcases || testcases.length === 0) {
+      updateTestResults(currentQuestionHeader, {
         testCaseResults: [],
-        overallResult: null,
-        executionError: "No test cases available for this problem.",
       });
       return;
     }
     try {
-      let updatedTestCases = testCases.map((tc) => ({
+      let updatedTestCases = testcases.map((tc) => ({
         ...tc,
         status: "running",
       }));
-      updateTestResults(currentQuestionId, {
+      updateTestResults(currentQuestionHeader, {
         testCaseResults: updatedTestCases,
-        overallResult: null,
-        executionError: null,
       });
-      const resultsArr = [];
       for (let i = 0; i < updatedTestCases.length; i++) {
         const testCase = updatedTestCases[i];
         updatedTestCases = updatedTestCases.map((tc, idx) => ({
           ...tc,
           status: idx === i ? "running" : tc.status,
         }));
-        updateTestResults(currentQuestionId, {
+        updateTestResults(currentQuestionHeader, {
           testCaseResults: updatedTestCases,
-          overallResult: null,
-          executionError: null,
         });
         const result = await executeCode(
           code,
@@ -347,25 +330,18 @@ export default function CodingRoundPage() {
           status: idx === i ? (passed ? "passed" : "failed") : tc.status,
           hidden: false,
         }));
-        resultsArr.push({ ...testCase, passed });
-        updateTestResults(currentQuestionId, {
+        updateTestResults(currentQuestionHeader, {
           testCaseResults: updatedTestCases,
-          overallResult: null,
-          executionError: null,
         });
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
-      const overallResult = resultsArr.every((test) => test.passed);
-      updateTestResults(currentQuestionId, {
+      // We no longer store overall results.
+      updateTestResults(currentQuestionHeader, {
         testCaseResults: updatedTestCases,
-        overallResult,
-        executionError: null,
       });
     } catch (error) {
-      updateTestResults(currentQuestionId, {
+      updateTestResults(currentQuestionHeader, {
         testCaseResults: [],
-        overallResult: false,
-        executionError: error.message,
       });
     }
   }, [
@@ -373,65 +349,55 @@ export default function CodingRoundPage() {
     selectedLanguage,
     problems,
     currentQuestionIndex,
-    currentQuestionId,
+    currentQuestionHeader,
     updateTestResults,
   ]);
 
   const handleFinish = () => setShowFinishModal(true);
   const confirmFinish = () => {
-    // Save current state before completing
-    updateCode(currentQuestionId, code);
-
-    // Optionally verify all questions have been attempted
+    // Save current state before completing.
+    updateCode(currentQuestionHeader, code);
+    // Optionally verify that all questions have been attempted.
     const allQuestionsAttempted = problems.every((problem) => {
-      const questionId = problem.id || "dynamic-question";
-      const questionState = useTechnicalStore.getState().questions[questionId];
+      const header = problem.questionHeader;
+      const questionState = useTechnicalStore.getState().questions[header];
       return (
-        questionState && questionState.code && questionState.code.trim() !== ""
+        questionState &&
+        questionState.userCode &&
+        questionState.userCode.trim() !== ""
       );
     });
-
     if (!allQuestionsAttempted) {
-      // Maybe show a warning, but still allow completion
       console.warn("Not all questions were attempted");
     }
-
     completeAssessment("coding");
     router.push("/hire");
   };
 
   const handlePreviousQuestion = useCallback(() => {
     if (currentQuestionIndex > 0) {
-      // Save current question state first
-      updateCode(currentQuestionId, code);
-
-      // Change to previous question
+      updateCode(currentQuestionHeader, code);
       setCurrentQuestionIndex((prev) => prev - 1);
       setExecutionOutput("");
-
-      // Use timeout to ensure currentQuestionId has updated
       setTimeout(() => {
-        // Reset test results for the new question
-        const nextQuestionId =
-          problems[currentQuestionIndex - 1]?.id || "dynamic-question";
-        // Always reset test results when changing questions
-        updateTestResults(nextQuestionId, {
+        const prevHeader =
+          problems[currentQuestionIndex - 1]?.questionHeader ||
+          "Dynamic Question";
+        updateTestResults(prevHeader, {
           testCaseResults: (
-            problems[currentQuestionIndex - 1]?.testCases || []
+            problems[currentQuestionIndex - 1]?.testcases || []
           ).map((tc) => ({
             ...tc,
             status: "pending",
             hidden: true,
           })),
-          overallResult: null,
-          executionError: null,
         });
       }, 0);
     }
   }, [
     currentQuestionIndex,
     problems,
-    currentQuestionId,
+    currentQuestionHeader,
     code,
     updateCode,
     updateTestResults,
@@ -439,42 +405,34 @@ export default function CodingRoundPage() {
 
   const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < problems.length - 1) {
-      // Save current question state first
-      updateCode(currentQuestionId, code);
-
-      // Change to next question
+      updateCode(currentQuestionHeader, code);
       setCurrentQuestionIndex((prev) => prev + 1);
       setExecutionOutput("");
-
-      // Use timeout to ensure currentQuestionId has updated
       setTimeout(() => {
-        // Reset test results for the new question
-        const nextQuestionId =
-          problems[currentQuestionIndex + 1]?.id || "dynamic-question";
-        // Always reset test results when changing questions
-        updateTestResults(nextQuestionId, {
+        const nextHeader =
+          problems[currentQuestionIndex + 1]?.questionHeader ||
+          "Dynamic Question";
+        updateTestResults(nextHeader, {
           testCaseResults: (
-            problems[currentQuestionIndex + 1]?.testCases || []
+            problems[currentQuestionIndex + 1]?.testcases || []
           ).map((tc) => ({
             ...tc,
             status: "pending",
             hidden: true,
           })),
-          overallResult: null,
-          executionError: null,
         });
       }, 0);
     }
   }, [
     currentQuestionIndex,
     problems,
-    currentQuestionId,
+    currentQuestionHeader,
     code,
     updateCode,
     updateTestResults,
   ]);
 
-  // Test case status indicator
+  // Render test case status using the status string.
   const TestCaseStatus = ({ status }) => {
     if (status === "passed") {
       return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -499,7 +457,6 @@ export default function CodingRoundPage() {
         </div>
       )}
       <div className={`${showFinishModal ? "filter blur-sm" : ""}`}>
-        {/* Header with nice gradient */}
         <div className="bg-gradient-to-r from-[#031930] via-[#132D49] to-[#223A59] py-8 px-6 shadow-lg">
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col items-center">
@@ -514,14 +471,10 @@ export default function CodingRoundPage() {
             </div>
           </div>
         </div>
-
-        {/* Main content area */}
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Problem description panel */}
             <section className="lg:w-5/12 space-y-4">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-50">
-                {/* Problem navigation */}
                 <div className="bg-gradient-to-r from-[#EBF4FF] to-[#F8FBFF] p-4 border-b border-blue-100 flex items-center justify-between">
                   <h3 className="text-xl font-bold text-[#031930] truncate pr-2">
                     {problems[currentQuestionIndex]?.questionHeader ||
@@ -549,10 +502,7 @@ export default function CodingRoundPage() {
                     </button>
                   </div>
                 </div>
-
-                {/* Problem content with accordion sections */}
                 <div className="px-5 py-4">
-                  {/* Description Section */}
                   <div className="border-b border-gray-100 pb-3">
                     <button
                       onClick={() => toggleSection("description")}
@@ -573,67 +523,54 @@ export default function CodingRoundPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Examples Section */}
-                  {problems[currentQuestionIndex]?.examples && (
-                    <div className="border-b border-gray-100 py-2">
-                      <button
-                        onClick={() => toggleSection("examples")}
-                        className="w-full flex items-center justify-between py-2 focus:outline-none"
-                      >
-                        <h4 className="text-lg font-semibold text-[#031930]">
-                          Examples
-                        </h4>
-                        {expandedSection === "examples" ? (
-                          <ChevronUp className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-blue-600" />
-                        )}
-                      </button>
-                      {expandedSection === "examples" && (
-                        <div className="pt-2 space-y-4">
-                          {problems[currentQuestionIndex].examples.map(
-                            (example, idx) => (
-                              <div
-                                key={idx}
-                                className="bg-blue-50 rounded-lg p-4 border border-blue-100"
-                              >
-                                <div className="text-sm font-medium text-blue-800 mb-2">
-                                  Example {idx + 1}
-                                </div>
-                                <div className="bg-white p-3 rounded border border-blue-100 mb-2">
-                                  <p className="text-sm mb-1 text-gray-500">
-                                    Input:
-                                  </p>
-                                  <p className="font-mono text-sm">
-                                    {JSON.stringify(example.input)}
-                                  </p>
-                                </div>
-                                <div className="bg-white p-3 rounded border border-blue-100 mb-2">
-                                  <p className="text-sm mb-1 text-gray-500">
-                                    Output:
-                                  </p>
-                                  <p className="font-mono text-sm">
-                                    {JSON.stringify(example.output)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-sm mb-1 text-gray-500">
-                                    Explanation:
-                                  </p>
-                                  <p className="text-sm text-gray-700">
-                                    {example.explanation}
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
+                  <div className="border-b border-gray-100 py-2">
+                    <button
+                      onClick={() => toggleSection("sampleTestcase")}
+                      className="w-full flex items-center justify-between py-2 focus:outline-none"
+                    >
+                      <h4 className="text-lg font-semibold text-[#031930]">
+                        Sample Test Case
+                      </h4>
+                      {expandedSection === "sampleTestcase" ? (
+                        <ChevronUp className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-blue-600" />
                       )}
-                    </div>
-                  )}
-
-                  {/* Constraints Section */}
+                    </button>
+                    {expandedSection === "sampleTestcase" && (
+                      <div className="pt-2 pb-3">
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 mb-2">
+                          <p className="text-sm mb-1 text-gray-500">Input:</p>
+                          <p className="font-mono text-sm">
+                            {JSON.stringify(
+                              problems[currentQuestionIndex]?.sampleTestcase
+                                ?.input
+                            )}
+                          </p>
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 mb-2">
+                          <p className="text-sm mb-1 text-gray-500">Output:</p>
+                          <p className="font-mono text-sm">
+                            {JSON.stringify(
+                              problems[currentQuestionIndex]?.sampleTestcase
+                                ?.output
+                            )}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm mb-1 text-gray-500">
+                            Explanation:
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {
+                              problems[currentQuestionIndex]?.sampleTestcase
+                                ?.explanation
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {problems[currentQuestionIndex]?.constraints && (
                     <div className="border-b border-gray-100 py-2">
                       <button
@@ -662,10 +599,8 @@ export default function CodingRoundPage() {
                       )}
                     </div>
                   )}
-
-                  {/* Test Cases Section */}
-                  {problems[currentQuestionIndex]?.testCases &&
-                    problems[currentQuestionIndex].testCases.length > 0 && (
+                  {problems[currentQuestionIndex]?.testcases &&
+                    problems[currentQuestionIndex].testcases.length > 0 && (
                       <div className="py-2">
                         <button
                           onClick={() => toggleSection("testCases")}
@@ -682,30 +617,8 @@ export default function CodingRoundPage() {
                         </button>
                         {expandedSection === "testCases" && (
                           <div className="pt-2 pb-3">
-                            {currentTestResults.overallResult !== null && (
-                              <div
-                                className={`p-3 rounded-lg mb-4 ${
-                                  currentTestResults.overallResult
-                                    ? "bg-green-50 border border-green-100 text-green-800"
-                                    : "bg-red-50 border border-red-100 text-red-800"
-                                }`}
-                              >
-                                <div className="flex items-center">
-                                  {currentTestResults.overallResult ? (
-                                    <CheckCircle className="w-5 h-5 mr-2" />
-                                  ) : (
-                                    <XCircle className="w-5 h-5 mr-2" />
-                                  )}
-                                  <span className="font-medium">
-                                    {currentTestResults.overallResult
-                                      ? "All tests passed!"
-                                      : "Some tests failed."}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
                             <div className="space-y-2">
-                              {problems[currentQuestionIndex].testCases.map(
+                              {problems[currentQuestionIndex].testcases.map(
                                 (tc, idx) => (
                                   <div
                                     key={idx}
@@ -747,11 +660,8 @@ export default function CodingRoundPage() {
                 </div>
               </div>
             </section>
-
-            {/* Code editor panel */}
             <section className="lg:w-7/12 flex flex-col">
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-blue-50 flex flex-col h-full">
-                {/* Code editor toolbar */}
                 <div className="bg-gradient-to-r from-[#EBF4FF] to-[#F8FBFF] p-4 border-b border-blue-100 flex flex-wrap gap-3 justify-between">
                   <div className="flex items-center space-x-3">
                     <select
@@ -777,7 +687,6 @@ export default function CodingRoundPage() {
                       <span>Run Code</span>
                     </button>
                   </div>
-
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={handleSubmit}
@@ -800,8 +709,6 @@ export default function CodingRoundPage() {
                     </button>
                   </div>
                 </div>
-
-                {/* Code editor */}
                 <div className="flex-1 border-b border-blue-100 overflow-hidden">
                   <CodeMirror
                     value={code}
@@ -810,13 +717,11 @@ export default function CodingRoundPage() {
                     theme={githubLight}
                     onChange={(value) => {
                       setCode(value);
-                      updateCode(currentQuestionId, value);
+                      updateCode(currentQuestionHeader, value);
                     }}
                     className="h-full text-base"
                   />
                 </div>
-
-                {/* Execution output */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-lg font-semibold text-[#031930]">
@@ -838,8 +743,6 @@ export default function CodingRoundPage() {
           </div>
         </div>
       </div>
-
-      {/* Finish modal */}
       {showFinishModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">

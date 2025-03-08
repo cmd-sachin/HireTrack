@@ -1,54 +1,51 @@
+// technicalStore.js
 import { create } from "zustand";
 
 const useTechnicalStore = create((set) => ({
   questions: {},
-
-  // Set or update a question's details (including default test results)
-  setQuestion: (questionId, questionData) => {
+  // Set or update a question using the question header as the key.
+  setQuestion: (questionHeader, questionData) => {
     set((state) => ({
       questions: {
         ...state.questions,
-        [questionId]: {
-          ...state.questions[questionId],
-          ...questionData,
-          // Ensure default structure for testResults exists.
-          testResults: state.questions[questionId]?.testResults || {
+        [questionHeader]: {
+          description: questionData.description,
+          sampleTestcase: questionData.sampleTestcase,
+          constraints: questionData.constraints,
+          testcases: questionData.testcases,
+          userCode: questionData.userCode || "",
+          testResults: state.questions[questionHeader]?.testResults || {
             testCaseResults: [],
-            overallResult: null,
-            executionError: null,
           },
         },
       },
     }));
   },
-
-  // Update the user's code for a given question.
-  updateCode: (questionId, code) => {
+  // Update the user code for a given question (using question header as key).
+  updateCode: (questionHeader, code) => {
     set((state) => ({
       questions: {
         ...state.questions,
-        [questionId]: {
-          ...state.questions[questionId],
-          code,
+        [questionHeader]: {
+          ...state.questions[questionHeader],
+          userCode: code,
         },
       },
     }));
   },
-
   // Update the test results for a given question.
-  updateTestResults: (questionId, results) => {
+  updateTestResults: (questionHeader, results) => {
     set((state) => ({
       questions: {
         ...state.questions,
-        [questionId]: {
-          ...state.questions[questionId],
+        [questionHeader]: {
+          ...state.questions[questionHeader],
           testResults: results,
         },
       },
     }));
   },
-
-  // (Optional) Reset store.
+  // Reset the store.
   resetStore: () => set({ questions: {} }),
 }));
 
