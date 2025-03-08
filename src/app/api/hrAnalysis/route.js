@@ -5,16 +5,16 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { message } = body;
-
+    console.log(body);
+    console.log(message);
     // Validate the request body
-    if (!message || message.type !== "assistant-request") {
+    if (!message || message?.type !== "assistant-request") {
       return NextResponse.json(
         { error: "Invalid request payload" },
         { status: 400 }
       );
     }
-    console.log(body);
-    console.log(message);
+
     return NextResponse.json({ message: "" }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error?.toString() });
