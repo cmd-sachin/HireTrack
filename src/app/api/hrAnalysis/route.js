@@ -1,8 +1,22 @@
-export async function GET(req) {
-  const data = { message: "Analysis Report Received" };
-  console.log(req);
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+// app/api/server/route.js
+import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(req) {
+  try {
+    const { message } = await req.json();
+
+    if (!message || message.type !== "assistant-request") {
+      return NextResponse.json(
+        { error: "Invalid request payload" },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ message: "Request processed successfully" });
+  } catch (error) {
+    console.error("Error processing request:", error);
+    return NextResponse.json({ error: error?.toString() }, { status: 500 });
+  }
 }
