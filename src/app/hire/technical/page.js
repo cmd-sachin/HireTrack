@@ -227,6 +227,16 @@ export default function CodingRoundPage() {
   }, [selectedLanguage, setQuestion, updateCode]);
 
   useEffect(() => {
+    // When question changes, ensure we have test results initialized
+    if (
+      currentQuestionId &&
+      !useTechnicalStore.getState().questions[currentQuestionId]?.testResults
+    ) {
+      updateTestResults(currentQuestionId, defaultTestResults);
+    }
+  }, [currentQuestionId, updateTestResults, defaultTestResults]);
+
+  useEffect(() => {
     fetchDynamicQuestions();
   }, [fetchDynamicQuestions]);
 
@@ -369,21 +379,100 @@ export default function CodingRoundPage() {
 
   const handleFinish = () => setShowFinishModal(true);
   const confirmFinish = () => {
+    // Save current state before completing
+    updateCode(currentQuestionId, code);
+
+    // Optionally verify all questions have been attempted
+    const allQuestionsAttempted = problems.every((problem) => {
+      const questionId = problem.id || "dynamic-question";
+      const questionState = useTechnicalStore.getState().questions[questionId];
+      return (
+        questionState && questionState.code && questionState.code.trim() !== ""
+      );
+    });
+
+    if (!allQuestionsAttempted) {
+      // Maybe show a warning, but still allow completion
+      console.warn("Not all questions were attempted");
+    }
+
     completeAssessment("coding");
     router.push("/hire");
   };
 
   const handlePreviousQuestion = useCallback(() => {
-    setCurrentQuestionIndex((prev) => (prev > 0 ? prev - 1 : prev));
-    setExecutionOutput("");
-  }, []);
+    if (currentQuestionIndex > 0) {
+      // Save current question state first
+      updateCode(currentQuestionId, code);
+
+      // Change to previous question
+      setCurrentQuestionIndex((prev) => prev - 1);
+      setExecutionOutput("");
+
+      // Use timeout to ensure currentQuestionId has updated
+      setTimeout(() => {
+        // Reset test results for the new question
+        const nextQuestionId =
+          problems[currentQuestionIndex - 1]?.id || "dynamic-question";
+        // Always reset test results when changing questions
+        updateTestResults(nextQuestionId, {
+          testCaseResults: (
+            problems[currentQuestionIndex - 1]?.testCases || []
+          ).map((tc) => ({
+            ...tc,
+            status: "pending",
+            hidden: true,
+          })),
+          overallResult: null,
+          executionError: null,
+        });
+      }, 0);
+    }
+  }, [
+    currentQuestionIndex,
+    problems,
+    currentQuestionId,
+    code,
+    updateCode,
+    updateTestResults,
+  ]);
 
   const handleNextQuestion = useCallback(() => {
-    setCurrentQuestionIndex((prev) =>
-      prev < problems.length - 1 ? prev + 1 : prev
-    );
-    setExecutionOutput("");
-  }, [problems.length]);
+    if (currentQuestionIndex < problems.length - 1) {
+      // Save current question state first
+      updateCode(currentQuestionId, code);
+
+      // Change to next question
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setExecutionOutput("");
+
+      // Use timeout to ensure currentQuestionId has updated
+      setTimeout(() => {
+        // Reset test results for the new question
+        const nextQuestionId =
+          problems[currentQuestionIndex + 1]?.id || "dynamic-question";
+        // Always reset test results when changing questions
+        updateTestResults(nextQuestionId, {
+          testCaseResults: (
+            problems[currentQuestionIndex + 1]?.testCases || []
+          ).map((tc) => ({
+            ...tc,
+            status: "pending",
+            hidden: true,
+          })),
+          overallResult: null,
+          executionError: null,
+        });
+      }, 0);
+    }
+  }, [
+    currentQuestionIndex,
+    problems,
+    currentQuestionId,
+    code,
+    updateCode,
+    updateTestResults,
+  ]);
 
   // Test case status indicator
   const TestCaseStatus = ({ status }) => {
