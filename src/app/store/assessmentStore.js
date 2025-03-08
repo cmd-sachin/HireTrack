@@ -16,7 +16,13 @@ const useAssessmentStore = create((set) => ({
       if (type === "aptitude") {
         updatedStatus.coding.unlocked = true;
       } else if (type === "coding") {
-        updatedStatus.interview.unlocked = true;
+        // Only unlock interview if both aptitude and coding are completed.
+        if (
+          updatedStatus.aptitude.completed &&
+          updatedStatus.coding.completed
+        ) {
+          updatedStatus.interview.unlocked = true;
+        }
       }
 
       return { assessmentStatus: updatedStatus };

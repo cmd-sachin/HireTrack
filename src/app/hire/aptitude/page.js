@@ -201,9 +201,8 @@ export default function QuizPage() {
 
   const handleFinishQuiz = () => {
     setFinishLoading(true);
-    // Mark the current round as completed in the store.
     completeAssessment("aptitude");
-    // Redirect to the /hire page after updating the status.
+
     router.push("/hire");
   };
 
@@ -286,8 +285,7 @@ export default function QuizPage() {
     );
   }
 
-  const progressPercentage =
-    ((currentQuestionIndex + 1) / totalQuestions) * 100;
+  const progressPercentage = (currentQuestionIndex / totalQuestions) * 100;
   const currentQuestion = questions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === totalQuestions - 1;
   const isQuestionRequired = currentQuestion?.required !== false;
