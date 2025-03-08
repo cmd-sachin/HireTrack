@@ -85,7 +85,6 @@ const VolumeLevel = ({ volume, label }) => {
       </div>
       <div className="flex items-end gap-1 h-16">
         {Array.from({ length: numBars }, (_, i) => {
-          const barThreshold = (i + 1) / numBars;
           const barHeight = `${Math.min(
             100,
             Math.max(15, volume > i / numBars ? 100 : 15)
@@ -104,9 +103,7 @@ const VolumeLevel = ({ volume, label }) => {
           return (
             <div
               key={i}
-              className={
-                "flex-1 rounded-t transition-all duration-200 ${barColor}"
-              }
+              className={`flex-1 rounded-t transition-all duration-200 ${barColor}`}
               style={{ height: barHeight }}
             />
           );
@@ -116,7 +113,7 @@ const VolumeLevel = ({ volume, label }) => {
   );
 };
 
-// Speech status indicator component
+// SpeechStatusIndicator component
 const SpeechStatusIndicator = ({ isSpeaking, type }) => {
   const colors = {
     hr: { active: "bg-[#36BDB5]", inactive: "bg-[#D1DDED]" },
@@ -128,9 +125,7 @@ const SpeechStatusIndicator = ({ isSpeaking, type }) => {
   return (
     <div className="flex items-center mb-3">
       <div
-        className={
-          "w-3 h-3 rounded-full ${color} mr-2 transition-colors duration-300"
-        }
+        className={`w-3 h-3 rounded-full ${color} mr-2 transition-colors duration-300`}
       />
       <span className="text-sm text-[#758BA5]">
         {isSpeaking ? "Speaking" : "Not speaking"}
@@ -366,8 +361,8 @@ export default function HRAgentPage() {
                     4
                   </div>
                   <span className="text-[#758BA5]">
-                    Maintain the integrity of the interview, any mall practises
-                    will disband the call.
+                    Maintain the integrity of the interview any malpractice will
+                    disband the call.
                   </span>
                 </li>
               </ul>
@@ -404,7 +399,6 @@ export default function HRAgentPage() {
               timeElapsed={timeElapsed}
               currentQuestion={currentQuestion}
             />
-
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               {/* Candidate Card */}
               <div className="bg-white rounded-xl shadow-md p-6 border border-[#D1DDED]">
@@ -420,7 +414,6 @@ export default function HRAgentPage() {
                 />
                 <VolumeLevel volume={candidateVolume} label="Your Volume" />
               </div>
-
               {/* HR - Gwen Card */}
               <div className="bg-white rounded-xl shadow-md p-6 border border-[#D1DDED]">
                 <div className="flex items-center mb-6">
@@ -436,7 +429,6 @@ export default function HRAgentPage() {
                 <VolumeLevel volume={hrVolume} label="Gwen's Volume" />
               </div>
             </div>
-
             <div className="flex justify-center gap-4">
               <Button
                 label="End Interview"
@@ -447,7 +439,6 @@ export default function HRAgentPage() {
           </div>
         )}
       </div>
-
       {/* Footer */}
       <footer className="bg-[#F5F9FF] py-8 mt-20">
         <div className="max-w-7xl mx-auto px-4">
@@ -456,18 +447,14 @@ export default function HRAgentPage() {
               © 2025 HireTrack. All Rights Reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              {/* <Link
-                href="/privacy"
-                className="text-[#758BA5] hover:text-[#3684DB]"
-              >
+              {/* Uncomment and update links if needed
+              <Link href="/privacy" className="text-[#758BA5] hover:text-[#3684DB]">
                 Privacy Policy
               </Link>
-              <Link
-                href="/terms"
-                className="text-[#758BA5] hover:text-[#3684DB]"
-              >
+              <Link href="/terms" className="text-[#758BA5] hover:text-[#3684DB]">
                 Terms of Service
-              </Link> */}
+              </Link>
+              */}
             </div>
           </div>
         </div>
