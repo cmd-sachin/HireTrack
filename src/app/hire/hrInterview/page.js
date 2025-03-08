@@ -85,7 +85,6 @@ const VolumeLevel = ({ volume, label }) => {
       </div>
       <div className="flex items-end gap-1 h-16">
         {Array.from({ length: numBars }, (_, i) => {
-          const barThreshold = (i + 1) / numBars;
           const barHeight = `${Math.min(
             100,
             Math.max(15, volume > i / numBars ? 100 : 15)
@@ -104,9 +103,7 @@ const VolumeLevel = ({ volume, label }) => {
           return (
             <div
               key={i}
-              className={
-                "flex-1 rounded-t transition-all duration-200 ${barColor}"
-              }
+              className={`flex-1 rounded-t transition-all duration-200 ${barColor}`}
               style={{ height: barHeight }}
             />
           );
@@ -128,9 +125,7 @@ const SpeechStatusIndicator = ({ isSpeaking, type }) => {
   return (
     <div className="flex items-center mb-3">
       <div
-        className={
-          "w-3 h-3 rounded-full ${color} mr-2 transition-colors duration-300"
-        }
+        className={`w-3 h-3 rounded-full ${color} mr-2 transition-colors duration-300`}
       />
       <span className="text-sm text-[#758BA5]">
         {isSpeaking ? "Speaking" : "Not speaking"}
@@ -456,18 +451,7 @@ export default function HRAgentPage() {
               © 2025 HireTrack. All Rights Reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              {/* <Link
-                href="/privacy"
-                className="text-[#758BA5] hover:text-[#3684DB]"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                href="/terms"
-                className="text-[#758BA5] hover:text-[#3684DB]"
-              >
-                Terms of Service
-              </Link> */}
+              {/* Add additional links here if needed */}
             </div>
           </div>
         </div>
