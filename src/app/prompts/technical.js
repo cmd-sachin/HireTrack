@@ -1,47 +1,35 @@
-import Airtable from "airtable";
-
-// Initialize Airtable connection
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-  process.env.AIRTABLE_BASE_ID
-);
-
-/**
- * Fetch the technical configuration for a given college (defaulting to "BIT")
- * and generate a dynamic system prompt for the technical coding round.
- *
- * @param {string} college - The college name (default: "BIT")
- * @returns {Promise<string>} The dynamically generated technical system prompt.
- */
 export async function getTechnicalSystemPrompt(college = "BIT") {
-  // Fetch the configuration record from Airtable for the given college
-  const records = await base("Criteria")
-    .select({
-      filterByFormula: `{College} = "${college}"`,
-      maxRecords: 1,
-    })
-    .all();
+  const apiUrl = `https://usw5-gw.dm-us.informaticacloud.com/8Dd7AsUmygidbLzN4jXhAI.com/criteria/v1/api/airtable/criteria?college=${college}`;
 
-  if (!records || records.length === 0) {
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+  const data = await response.json();
+
+  if (
+    !data.success ||
+    !data.configurations ||
+    data.configurations.length === 0
+  ) {
     throw new Error(`No configuration found for college: ${college}`);
   }
 
-  const record = records[0];
+  const record = data.configurations[0];
 
-  // Retrieve the configuration values with fallbacks
   const questionType =
-    record.get("TechnicalQuestionType") || "Data Structure & Algorithms";
-  const difficulty = record.get("TechnicalDifficulty") || "Intermediate";
+    record.technicalQuestionType || "Data Structure and Algorithm";
+  const difficulty = record.technicalDifficulty || "Advanced";
+  const numberOfQuestions = record.technicalQuestions || 2;
+  const additionalNote =
+    record.technicalNotes ||
+    "Generate all questions with same difficulty level";
 
-  let topics = record.get("TechnicalQuestionTopics") || [];
-  // If topics is stored as a comma-separated string, convert it to an array
+  // Process topics - if the topics are provided as a comma-separated string, convert to array
+  let topics = record.technicalTopics || [];
   if (typeof topics === "string") {
     topics = topics.split(",").map((topic) => topic.trim());
   }
-
-  const numberOfQuestions = Number(record.get("TechnicalNoQuestions")) || 4;
-  const additionalNote =
-    record.get("TechnicalNotes") ||
-    "Generate all questions with same difficulty level";
 
   // Build the dynamic system prompt string
   const prompt = `# Technical Coding Round Question Generator (System Instructions)

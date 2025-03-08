@@ -1,33 +1,31 @@
-import Airtable from "airtable";
-
-// Initialize Airtable connection
-const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-  process.env.AIRTABLE_BASE_ID
-);
-
 export async function getAptitudeSystemPrompt(college = "BIT") {
-  const records = await base("Criteria")
-    .select({
-      filterByFormula: `{College} = "${college}"`,
-      maxRecords: 1,
-    })
-    .all();
+  const apiUrl = `https://usw5-gw.dm-us.informaticacloud.com/8Dd7AsUmygidbLzN4jXhAI.com/criteria/v1/api/airtable/criteria?college=${college}`;
 
-  if (!records || records.length === 0) {
+  const response = await fetch(apiUrl);
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+  const data = await response.json();
+
+  if (
+    !data.success ||
+    !data.configurations ||
+    data.configurations.length === 0
+  ) {
     throw new Error(`No configuration found for college: ${college}`);
   }
 
-  const record = records[0];
+  const record = data.configurations[0];
 
-  const difficulty = record.get("AptitudeDifficulty") || "Intermediate";
+  const difficulty = record.aptitudeDifficulty || "Intermediate";
 
-  let topics = record.get("AptitudeTopics") || [];
+  let topics = record.aptitudeTopics || [];
+
   if (typeof topics === "string") {
     topics = topics.split(",").map((topic) => topic.trim());
   }
 
-  // Retrieve weightage. If stored as a JSON string, parse it.
-  let weightage = record.get("AptitudeTopicsWeightage") || {};
+  let weightage = record.aptitudeWeightage || {};
   if (typeof weightage === "string") {
     try {
       weightage = JSON.parse(weightage);
@@ -38,10 +36,9 @@ export async function getAptitudeSystemPrompt(college = "BIT") {
   }
 
   const specialInstructions =
-    record.get("AptitudeNotes") ||
+    record.aptitudeNotes ||
     "Generate both aptitude and logical reasoning questions.";
 
-  // Build the dynamic system prompt using the fetched values
   const prompt = `
 # Interview Aptitude & Logical Reasoning Question Generator
 
@@ -78,11 +75,11 @@ ${Object.keys(weightage)
 ## Examples
 ### Example 1 (MCQ)
 Question: "What is the base of the decimal number system?"
-Options: ["Base 10", "Base 2", "Base 8", "Base 16"]
+Options: [Base 10, Base 2, Base 8, Base 16]
 
 ### Example 2 (True/False)
 Question: "The average of two numbers is always one of the numbers."
-Options: ["True", "False"]
+Options: [True, False]
 
 ## Output Requirements
 The generated question should be output in the following format:
@@ -95,19 +92,19 @@ The generated question should be output in the following format:
 ❌ *Serious Issue*  - ** The same question is repeated many times ** 
 - The similarity between the questions is very high which is not good 
 
-✅ *Solution* - Analyse the history(messages array) with much care before generating a question.
+✅ *Solution* - Analyze the history (messages array) with much care before generating a question.
 
 ## Validate Checklist
 -[] Ensure No Questions Are Repeated
--[] Ensure the generated question has less similarity with the questions in the history(messages)
+-[] Ensure the generated question has less similarity with the questions in the history (messages)
 -[] Questions must be only from the given topics
--[] Reasoning questions should not only have True/False Type questions, also generate a mix of MCQs and True/False (More weightage to MCQs)
+-[] Reasoning questions should not only have True/False Type questions; also generate a mix of MCQs and True/False (More weightage to MCQs)
 
 ## Remember Notes
 - Confirm that each question is unique by cross-checking with the messages array.
 - Ensure a balanced mix of MCQs and True/False questions.
 - Stick closely to the topic and weightage guidelines provided above.
-- Strictly don't generate repeated questions or similar questions.
+- Strictly don't generate repeated or overly similar questions.
 `;
 
   return prompt;
