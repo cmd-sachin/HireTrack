@@ -17,7 +17,7 @@ export async function POST(req) {
     });
 
     const result = await generateObject({
-      model: google("gemini-2.0-flash-thinking-exp-01-21"),
+      model: google("gemini-2.0-flash"),
       schema: schema,
       system: evaluationPrompt,
       prompt: JSON.stringify({ technicalCodeData, aptitudeTestData }),

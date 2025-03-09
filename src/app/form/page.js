@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "./../components/NavBar";
+import useRegistrationStore from "../stores/registrationStore";
 
 export default function RegistrationForm() {
   const router = useRouter();
@@ -21,11 +22,13 @@ export default function RegistrationForm() {
     email: "",
     linkedin: "",
     github: "",
-    resume: "", // now a text input for Google Drive share link
-    skills: [],
+    resume: "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Get the setRegistrationData function from our zustand store
+  const { setRegistrationData } = useRegistrationStore();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -78,6 +81,9 @@ export default function RegistrationForm() {
     }
     setErrors({});
     setSubmitting(true);
+
+    // Store the registration data in the zustand store
+    setRegistrationData(formData);
 
     try {
       const payload = {

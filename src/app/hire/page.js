@@ -10,15 +10,25 @@ import {
   Clock,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/NavBar";
 import { useRouter } from "next/navigation";
 import useAssessmentStore from "../store/assessmentStore";
+import { useAptitudeStore } from "../store/aptitudeStore";
+import useTechnicalStore from "../store/technicalStore";
+import useRegistrationStore from "../store/registrationStore";
 
 export default function Assessment() {
   const router = useRouter();
   const { assessmentStatus } = useAssessmentStore();
+  const { quizData } = useAptitudeStore();
+  const { questions } = useTechnicalStore();
+  const { name, email } = useRegistrationStore();
   const [loading, setLoading] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [evaluationResults, setEvaluationResults] = useState(null);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState(null);
 
   const startAssessment = (type) => {
     setLoading(type);
@@ -39,6 +49,74 @@ export default function Assessment() {
     ).length;
     return (completed / 3) * 100;
   };
+
+  const allCompleted = Object.values(assessmentStatus).every(
+    (round) => round.completed
+  );
+
+  // Fetch evaluation results when modal opens.
+  useEffect(() => {
+    const fetchResults = async () => {
+      setResultsLoading(true);
+      setResultsError(null);
+      try {
+        const payload = {
+          technicalCodeData: questions,
+          aptitudeTestData: quizData,
+        };
+        const res = await fetch("/api/evaluation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to fetch evaluation results");
+        }
+        const data = await res.json();
+        setEvaluationResults(data);
+      } catch (error) {
+        setResultsError(error.message);
+      } finally {
+        setResultsLoading(false);
+      }
+    };
+
+    if (showModal) {
+      fetchResults();
+    }
+  }, [showModal, questions, quizData]);
+
+  // Once evaluation results are available, store them in Airtable.
+  useEffect(() => {
+    const storeResultsInAirtable = async () => {
+      try {
+        const payload = {
+          Name: name,
+          Mail: email,
+          AptitudeScore: evaluationResults.aptitudeScore,
+          AptitudeReport: evaluationResults.aptitudeReport,
+          TechnicalScore: evaluationResults.technicalScore,
+          TechnicalReport: evaluationResults.technicalReport,
+        };
+        const res = await fetch("/api/airtable/result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          console.error("Failed to store results in Airtable");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (evaluationResults) {
+      storeResultsInAirtable();
+    }
+  }, [evaluationResults, name, email]);
 
   return (
     <div className="min-h-screen bg-[#F5F9FF]">
@@ -115,7 +193,7 @@ export default function Assessment() {
                 }`}
               >
                 <div className="h-2 bg-[#3684DB]"></div>
-                <div className="p-6">
+                <div className="p-6 flex flex-col h-full">
                   <div className="w-14 h-14 bg-[#EFF6FF] rounded-full flex items-center justify-center mb-4">
                     <Icon className="w-8 h-8 text-[#3684DB]" />
                   </div>
@@ -133,7 +211,7 @@ export default function Assessment() {
                     <Clock className="w-5 h-5 text-[#758BA5] mr-2" />
                     <span className="text-sm text-[#758BA5]">{duration}</span>
                   </div>
-                  <div className="border-t border-[#D1DDED] pt-4 mt-auto">
+                  <div className="mt-auto border-t border-[#D1DDED] pt-4">
                     {completed ? (
                       <div className="flex items-center text-green-600">
                         <CheckCircle className="w-5 h-5 mr-2" />
@@ -164,7 +242,80 @@ export default function Assessment() {
             );
           })}
         </div>
+
+        {/* Results Button */}
+        {allCompleted && (
+          <div className="mt-10 flex justify-center">
+            <button
+              onClick={() => setShowModal(true)}
+              className="py-3 px-6 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
+            >
+              Results
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Modal Overlay */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Blurry, transparent background */}
+          <div
+            className="absolute inset-0 bg-black opacity-40 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          ></div>
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-xl shadow-xl w-11/12 max-w-2xl mx-auto p-6 z-10">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#031930]">
+                Evaluation Results
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-[#3684DB] hover:text-[#2D6FC0] font-semibold"
+              >
+                Close
+              </button>
+            </div>
+            {resultsLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="animate-spin h-8 w-8 text-[#3684DB]" />
+              </div>
+            ) : resultsError ? (
+              <p className="text-red-500">{resultsError}</p>
+            ) : evaluationResults ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-[#223A59]">
+                    Aptitude Test
+                  </h3>
+                  <p className="text-[#758BA5]">
+                    <strong>Score:</strong> {evaluationResults.aptitudeScore}
+                  </p>
+                  <p className="text-[#758BA5]">
+                    <strong>Report:</strong> {evaluationResults.aptitudeReport}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-[#223A59]">
+                    Coding Test
+                  </h3>
+                  <p className="text-[#758BA5]">
+                    <strong>Score:</strong> {evaluationResults.technicalScore}
+                  </p>
+                  <p className="text-[#758BA5]">
+                    <strong>Report:</strong> {evaluationResults.technicalReport}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[#758BA5]">
+                No results available. Please try again later.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
