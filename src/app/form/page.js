@@ -13,7 +13,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "./../components/NavBar";
-import useRegistrationStore from "../stores/registrationStore";
+import useRegistrationStore from "../store/registrationStore";
 
 export default function RegistrationForm() {
   const router = useRouter();

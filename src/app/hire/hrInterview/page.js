@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { User, Mic, ArrowLeft, Briefcase } from "lucide-react";
 import Link from "next/link";
+import useAssessmentStore from "@/app/store/assessmentStore";
+import { useRouter } from "next/navigation";
 
 // Error checking helper function
 export const isPublicKeyMissingError = ({ vapiError }) => {
@@ -161,7 +163,8 @@ export default function HRAgentPage() {
   );
   const { showMsg, setShowMsg } = usePublicKeyInvalid();
   const [micError, setMicError] = useState(false);
-
+  const { completeAssessment } = useAssessmentStore();
+  const router = useRouter();
   // Timer effect for interview duration
   useEffect(() => {
     let timer;
@@ -199,6 +202,8 @@ export default function HRAgentPage() {
       setConnected(false);
       setConnecting(false);
       setShowMsg(false);
+      completeAssessment("interview");
+      router.push("/hire");
     });
 
     vapi.on("speech-start", () => {
