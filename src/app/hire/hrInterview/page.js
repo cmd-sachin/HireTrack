@@ -4,8 +4,6 @@ import React, { useEffect, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { User, Mic, ArrowLeft, Briefcase } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import useAssessmentStore from "../../store/assessmentStore";
 
 // Error checking helper function
 export const isPublicKeyMissingError = ({ vapiError }) => {
@@ -115,7 +113,7 @@ const VolumeLevel = ({ volume, label }) => {
   );
 };
 
-// Speech status indicator component
+// SpeechStatusIndicator component
 const SpeechStatusIndicator = ({ isSpeaking, type }) => {
   const colors = {
     hr: { active: "bg-[#36BDB5]", inactive: "bg-[#D1DDED]" },
@@ -163,10 +161,6 @@ export default function HRAgentPage() {
   );
   const { showMsg, setShowMsg } = usePublicKeyInvalid();
   const [micError, setMicError] = useState(false);
-  const router = useRouter();
-  const completeAssessment = useAssessmentStore(
-    (state) => state.completeAssessment
-  );
 
   // Timer effect for interview duration
   useEffect(() => {
@@ -205,8 +199,6 @@ export default function HRAgentPage() {
       setConnected(false);
       setConnecting(false);
       setShowMsg(false);
-      completeAssessment("interview");
-      router.push("/hire");
     });
 
     vapi.on("speech-start", () => {
@@ -307,12 +299,11 @@ export default function HRAgentPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-[#031930]">
-            AI-Powered HR Interview
+            AI-Powered Hiring
           </h1>
           <p className="mt-3 text-[#758BA5] max-w-2xl mx-auto">
-            Practice your interview skills with Gwen, our AI-powered HR
-            recruiter. Get comfortable answering common interview questions
-            before your real interviews.
+            Meet Gwen our intelligent AI recruiter, streamlining hiring with
+            precision and speed.
           </p>
         </div>
 
@@ -331,10 +322,9 @@ export default function HRAgentPage() {
                 </div>
               </div>
               <p className="text-[#031930] mb-6">
-                Gwen will conduct an actual job interview, asking you about your
-                experience, skills, and career goals. She&apos;ll provide a
-                comprehensive assessment of your interview performance
-                afterward.
+                Gwen will conduct a real job interview, evaluating your
+                experience, skills, and career goals. She will then provide a
+                comprehensive assessment of your performance.
               </p>
               <h3 className="font-semibold text-[#223A59] mb-2">
                 Interview Instructions:
@@ -369,8 +359,8 @@ export default function HRAgentPage() {
                     4
                   </div>
                   <span className="text-[#758BA5]">
-                    Maintain the integrity of the interview, any mall practises
-                    will disband the call.
+                    Maintain the integrity of the interview any malpractice will
+                    disband the call.
                   </span>
                 </li>
               </ul>
@@ -407,7 +397,6 @@ export default function HRAgentPage() {
               timeElapsed={timeElapsed}
               currentQuestion={currentQuestion}
             />
-
             <div className="grid md:grid-cols-2 gap-8 mb-8">
               {/* Candidate Card */}
               <div className="bg-white rounded-xl shadow-md p-6 border border-[#D1DDED]">
@@ -423,7 +412,6 @@ export default function HRAgentPage() {
                 />
                 <VolumeLevel volume={candidateVolume} label="Your Volume" />
               </div>
-
               {/* HR - Gwen Card */}
               <div className="bg-white rounded-xl shadow-md p-6 border border-[#D1DDED]">
                 <div className="flex items-center mb-6">
@@ -439,7 +427,6 @@ export default function HRAgentPage() {
                 <VolumeLevel volume={hrVolume} label="Gwen's Volume" />
               </div>
             </div>
-
             <div className="flex justify-center gap-4">
               <Button
                 label="End Interview"
@@ -450,7 +437,6 @@ export default function HRAgentPage() {
           </div>
         )}
       </div>
-
       {/* Footer */}
       <footer className="bg-[#F5F9FF] py-8 mt-20">
         <div className="max-w-7xl mx-auto px-4">
@@ -459,7 +445,14 @@ export default function HRAgentPage() {
               © 2025 HireTrack. All Rights Reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              {/* Add additional links here if needed */}
+              {/* Uncomment and update links if needed
+              <Link href="/privacy" className="text-[#758BA5] hover:text-[#3684DB]">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="text-[#758BA5] hover:text-[#3684DB]">
+                Terms of Service
+              </Link>
+              */}
             </div>
           </div>
         </div>
